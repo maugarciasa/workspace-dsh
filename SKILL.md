@@ -54,7 +54,28 @@ Para consultar o catálogo exaustivo com as 120 skills, veja [`references/skills
 
 ---
 
-## 3. Gestão e Sincronização de Skills na Máquina
+
+
+---
+
+## 3. Guia Rápido por Intenção ("Quero fazer X, qual skill usar?")
+
+| Sua Intenção Imediata | Chame esta Skill | Como Executar / Dica Prática |
+| :--- | :--- | :--- |
+| **Criar um Reels ou vídeo de lançamento narrado** | `brag-instagram` ou `brag` | Gera um Reels 1080x1920 com narração pt-BR e legendas automáticas direto do código. |
+| **Desenhar UI moderna com Shadcn/Tailwind** | `shadcn` e `frontend-design` | Adiciona componentes acessíveis, presets e tokens de design sem visual genérico. |
+| **Adicionar animações ou micro-interações fluidas** | `animate` ou `apple-design` | Constrói animações com físicas reais, springs e respeito a `reduced-motion`. |
+| **Investigar um bug misterioso ou falha em teste** | `systematic-debugging` | Estabelece hipóteses, isola a causa raiz antes de propor ou alterar qualquer linha. |
+| **Refatorar código existente com garantia total** | `safe-refactor` + `test-driven-development` | Protege o comportamento externo com testes antes de mover ou reescrever funções. |
+| **Eliminar código inflado e overengineering** | `ponytail-review` ou `ponytail-audit` | Localiza abstrações inúteis, bibliotecas reinventadas e aplica YAGNI agressivo. |
+| **Poupar tokens e ter respostas telegráficas** | `caveman` (modo `full`) | Corte de até 60% de tokens no chat sem perder precisão técnica. |
+| **Trabalhar com banco Postgres / Supabase / RLS** | `supabase-postgres-best-practices` | Escreve migrations limpas, RLS rigorosas e RPCs com permissões fechadas por padrão. |
+| **Testar a UI e fluxos de ponta a ponta no browser** | `playwright-best-practices` ou `webapp-testing` | Page Object Models resilientes, mocks de APIs e testes E2E sem flakiness. |
+| **Classificar leads, mensagens ou e-mails** | `jev-classificar` | Classificação semântica de alta precisão com suporte do classificador Jev. |
+| **Otimizar SEO para Google e AI Overviews (GEO)** | `seo` e `seo-geo` | Auditoria técnica de indexabilidade, Core Web Vitals, Schema.org e citabilidade por LLMs. |
+| **Criar ou testar uma nova skill para agentes** | `writing-skills` | Aplica o ciclo RED-GREEN-REFACTOR em documentações para agentes autônomos. |
+
+## 4. Gestão e Sincronização de Skills na Máquina
 
 As skills reais ficam centralizadas em:
 `C:\Users\Mau\.agents\skills` (acessível pelo junction `C:\dev\agents-skills`).
@@ -74,9 +95,11 @@ New-Item -ItemType Junction -Path "$HOME\.claude\skills\<nome>" -Target "$HOME\.
 
 ---
 
-## 4. Documentos de Referência Incluídos
+## 5. Documentos de Referência Incluídos
 
 - [`references/skills-catalog.md`](references/skills-catalog.md): Catálogo completo das 120 skills, separadas por categoria, com status e trigger description.
 - [`references/machine-rules.md`](references/machine-rules.md): Especificação completa do ambiente Windows 11, junctions, RTK, Caveman, Ponytail, Karpathy e Git.
 - [`references/project-nallon.md`](references/project-nallon.md): Diretrizes específicas do projeto Nallon (Next.js, Supabase, RLS, limites duros).
-- [`scripts/sync-junctions.ps1`](scripts/sync-junctions.ps1): Automação para sincronizar pastas de skills com o Claude Code.
+- [`scripts/sync-junctions.ps1`](scripts/sync-junctions.ps1): Automação PowerShell para sincronizar Junctions no Windows.
+- [`scripts/test-environment.ps1`](scripts/test-environment.ps1): Diagnóstico automático em 1 clique da saúde de ferramentas (RTK, gh CLI, DSH e Junctions).
+- [`scripts/sync-symlinks.sh`](scripts/sync-symlinks.sh): Script Shell POSIX para Linux/macOS/WSL.

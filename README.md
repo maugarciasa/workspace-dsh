@@ -5,6 +5,13 @@
 Compatível com **Claude Code**, **DeepSeek Harness (DSH)**, **Cursor**, **Codex**, **OpenAI Swarm** e qualquer runtime compatível com o padrão [Agent Skills](https://skills.sh/).
 
 ---
+### 🛠️ Scripts Utilitários Inclusos
+
+- **`scripts/test-environment.ps1`**: Diagnóstico de integridade do ambiente (RTK, gh CLI, DSH, junctions e branches).
+- **`scripts/sync-junctions.ps1`**: Criação automática de Junctions NTFS para Windows.
+- **`scripts/sync-symlinks.sh`**: Sincronização automática de symlinks para Linux, macOS e WSL.
+
+---
 
 ## 🚀 Instalação Rápida
 
