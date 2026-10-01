@@ -1,4 +1,4 @@
-# Workspace Hub (Agent Skill)
+# Workspace DSH (Agent Skill)
 
 > **Catálogo de orquestração com mais de 120 skills, boas práticas de economia de tokens (Caveman, Ponytail, Karpathy) e automação de ambiente para agentes de IA.**
 
@@ -11,13 +11,13 @@ Compatível com **Claude Code**, **DeepSeek Harness (DSH)**, **Cursor**, **Codex
 Instale globalmente com o gerenciador oficial de skills:
 
 ```bash
-npx skills add maugarciasa/workspace-hub -g
+npx skills add maugarciasa/workspace-dsh -g
 ```
 
 Ou clone manualmente na sua pasta de skills:
 
 ```bash
-git clone https://github.com/maugarciasa/workspace-hub.git ~/.agents/skills/workspace-hub
+git clone https://github.com/maugarciasa/workspace-dsh.git ~/.agents/skills/workspace-dsh
 ```
 
 ---
@@ -39,7 +39,7 @@ git clone https://github.com/maugarciasa/workspace-hub.git ~/.agents/skills/work
 Uma vez instalado, o agente pode carregar este hub automaticamente quando precisar se situar sobre quais ferramentas e convenções adotar:
 
 ```markdown
-skill: workspace-hub
+skill: workspace-dsh
 ```
 
 ---

@@ -1,9 +1,9 @@
 ---
-name: workspace-hub
+name: workspace-dsh
 description: Use when needing an overview, routing, or execution guidance across all installed skills (120+), machine conventions (Caveman, Ponytail, Karpathy, RTK, Jev), and local workspace configurations on this machine.
 ---
 
-# Workspace Hub: Guia Mestre de Skills e Ambiente Local (Mau)
+# Workspace DSH: Guia Mestre de Skills e Ambiente Local (Mau)
 
 Este skill centraliza a orquestração de **todas as 120 skills instaladas**, as **convenções obrigatórias de sessão** e a **arquitetura do ambiente de desenvolvimento** desta máquina.
 
@@ -64,7 +64,7 @@ Como o Claude Code só enxerga `~/.claude/skills`, novas skills devem possuir um
 ### Sincronizar todas as skills automaticamente:
 Execute o script incluído:
 ```powershell
-pwsh -File "C:\Users\Mau\.agents\skills\workspace-hub\scripts\sync-junctions.ps1"
+pwsh -File "C:\Users\Mau\.agents\skills\workspace-dsh\scripts\sync-junctions.ps1"
 ```
 
 ### Criar Junction manual para uma skill:
