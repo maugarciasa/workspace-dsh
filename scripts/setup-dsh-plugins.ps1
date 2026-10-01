@@ -19,6 +19,36 @@ if (-not (Test-Path $ProfileDir)) {
   New-Item -ItemType Directory -Path $ProfileDir -Force | Out-Null
 }
 
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$repoRoot = Split-Path -Parent $scriptDir
+$localPluginsSource = Join-Path $repoRoot "plugins"
+
+# 1. Copiar plugins de UI locais (dsh-credits-hero e dsh-distill-ui)
+$targetLocalPlugins = Join-Path $ProfileDir "plugins"
+if (Test-Path $localPluginsSource) {
+  Write-Host "Instalando plugins locais de UI em: $targetLocalPlugins..." -ForegroundColor Green
+  if (-not (Test-Path $targetLocalPlugins)) {
+    New-Item -ItemType Directory -Path $targetLocalPlugins -Force | Out-Null
+  }
+  Copy-Item -Path "$localPluginsSource\*" -Destination $targetLocalPlugins -Recurse -Force
+}
+
+# 2. Configurar cordis.patch.yml do perfil
+$patchPath = Join-Path $ProfileDir "cordis.patch.yml"
+$patchContent = @"
+# Your patch layer for this dsh profile, applied after every bundle layer:
+- insert:
+    - id: distill-ui
+      name: 'dsh-distill-ui'
+    - id: credits-hero
+      name: 'dsh-credits-hero'
+"@
+if (-not (Test-Path $patchPath)) {
+  Set-Content -Path $patchPath -Value $patchContent -Encoding utf8
+  Write-Host "Criado cordis.patch.yml com dsh-distill-ui e dsh-credits-hero." -ForegroundColor Green
+}
+
+# 3. Configurar dependências e bundles no package.json
 $pkgPath = Join-Path $ProfileDir "package.json"
 
 $desiredDependencies = @{
@@ -48,7 +78,6 @@ $desiredBundles = @(
 )
 
 if (-not (Test-Path $pkgPath)) {
-  Write-Host "Criando package.json base do perfil..." -ForegroundColor Yellow
   @{
     name = "dsh-profile-web"
     private = $true
@@ -61,7 +90,6 @@ if (-not (Test-Path $pkgPath)) {
     }
   } | ConvertTo-Json -Depth 5 | Out-File -FilePath $pkgPath -Encoding utf8
 } else {
-  Write-Host "Atualizando package.json existente com os plugins..." -ForegroundColor Yellow
   $pkg = Get-Content $pkgPath -Raw | ConvertFrom-Json
   if (-not $pkg.dependencies) {
     $pkg | Add-Member -MemberType NoteProperty -Name "dependencies" -Value ([PSCustomObject]@{})
@@ -104,7 +132,7 @@ try {
   } elseif (Get-Command npm -ErrorAction SilentlyContinue) {
     npm install
   }
-  Write-Host "Todos os 9 plugins foram instalados com sucesso!" -ForegroundColor Green
+  Write-Host "Todos os plugins foram instalados com sucesso!" -ForegroundColor Green
 } finally {
   Pop-Location
 }

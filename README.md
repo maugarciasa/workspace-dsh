@@ -110,6 +110,9 @@ workspace-dsh/
 ├── SKILL.md                          # Ponto de entrada oficial da skill
 ├── README.md                         # Documentação completa e instruções de uso
 ├── LICENSE                           # Licença permissiva MIT
+├── plugins/                          # Plugins locais de UI do DeepSeek Harness
+│   ├── dsh-credits-hero/             # Chip indicador de cotas/créditos ChatGPT/Codex na home
+│   └── dsh-distill-ui/               # Interface destilada com tool batching em bloco único
 ├── references/
 │   ├── dsh-plugins.md                # Guia de todos os 11 plugins do DSH
 │   ├── skills-catalog.md             # Catálogo consolidado das 120+ skills

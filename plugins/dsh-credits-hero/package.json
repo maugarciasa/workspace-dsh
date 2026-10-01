@@ -1,0 +1,21 @@
+{
+  "name": "dsh-credits-hero",
+  "version": "0.1.0",
+  "description": "Chip de credito (cota das contas ChatGPT/Codex do pool) na linha do modo PTC da pagina inicial.",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": ["@deepseek-ai/dsh-client-ui-slots", "@deepseek-ai/dsh-client-ui-conversation"]
+    }
+  }
+}

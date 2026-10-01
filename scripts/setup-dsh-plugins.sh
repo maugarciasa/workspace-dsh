@@ -10,6 +10,26 @@ PROFILE_DIR="${HOME}/.dsh/profiles/web"
 echo "==> Configurando ecossistema completo de plugins do DSH..."
 
 mkdir -p "${PROFILE_DIR}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# 1. Copiar plugins locais de UI
+if [ -d "${REPO_ROOT}/plugins" ]; then
+  mkdir -p "${PROFILE_DIR}/plugins"
+  cp -r "${REPO_ROOT}/plugins/"* "${PROFILE_DIR}/plugins/"
+fi
+
+# 2. Configurar cordis.patch.yml
+if [ ! -f "${PROFILE_DIR}/cordis.patch.yml" ]; then
+  cat <<'EOF' > "${PROFILE_DIR}/cordis.patch.yml"
+- insert:
+    - id: distill-ui
+      name: 'dsh-distill-ui'
+    - id: credits-hero
+      name: 'dsh-credits-hero'
+EOF
+fi
+
 cd "${PROFILE_DIR}"
 
 PLUGINS=(
