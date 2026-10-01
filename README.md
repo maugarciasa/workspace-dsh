@@ -1,5 +1,8 @@
 # Workspace DSH (Agent Skill)
 
+[![Validate Agent Skill](https://github.com/maugarciasa/workspace-dsh/actions/workflows/validate.yml/badge.svg)](https://github.com/maugarciasa/workspace-dsh/actions/workflows/validate.yml)
+
+
 > **Catálogo de orquestração com mais de 120 skills, boas práticas de economia de tokens (Caveman, Ponytail, Karpathy) e automação de ambiente para agentes de IA.**
 
 Compatível com **Claude Code**, **DeepSeek Harness (DSH)**, **Cursor**, **Codex**, **OpenAI Swarm** e qualquer runtime compatível com o padrão [Agent Skills](https://skills.sh/).
@@ -10,6 +13,7 @@ Compatível com **Claude Code**, **DeepSeek Harness (DSH)**, **Cursor**, **Codex
 - **`scripts/test-environment.ps1`**: Diagnóstico de integridade do ambiente (RTK, gh CLI, DSH, junctions e branches).
 - **`scripts/sync-junctions.ps1`**: Criação automática de Junctions NTFS para Windows.
 - **`scripts/sync-symlinks.sh`**: Sincronização automática de symlinks para Linux, macOS e WSL.
+- **`scripts/validate-skill.mjs`**: Validador oficial de especificação (YAML frontmatter, limites e links quebrados).
 
 ---
 
