@@ -1,37 +1,17 @@
-# Workspace DSH (Agent Skill)
+# Workspace DSH (Agent Skill & Environment Kit)
 
 [![Validate Agent Skill](https://github.com/maugarciasa/workspace-dsh/actions/workflows/validate.yml/badge.svg)](https://github.com/maugarciasa/workspace-dsh/actions/workflows/validate.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![OS: Linux | macOS | Windows](https://img.shields.io/badge/OS-Linux%20%7C%20macOS%20%7C%20Windows-blue)](https://github.com/maugarciasa/workspace-dsh)
 [![Platform: Agent Skills](https://img.shields.io/badge/Standard-Agent%20Skills%20(skills.sh)-success)](https://skills.sh/)
 
-> **Skill mestra de orquestração com mais de 120 skills indexadas, diretrizes comprovadas de economia de tokens (Caveman, Ponytail, Karpathy) e suporte nativo multiplataforma (Linux, macOS e Windows).**
+> **Skill mestra de orquestração com mais de 120 skills indexadas, diretrizes comprovadas de economia de tokens (Caveman, Ponytail, Karpathy) e provisionamento completo dos plugins do DeepSeek Harness (DSH).**
 
-Compatível com **Claude Code**, **DeepSeek Harness (DSH)**, **Cursor**, **Codex**, **Gemini CLI** e qualquer runtime aderente à especificação [Agent Skills](https://agentskills.io).
-
----
----
-
-## 🔌 Plugins do DeepSeek Harness (ChatGPT & AGY)
-
-O repositório inclui a documentação e scripts de automação para os dois plugins essenciais de roteamento de IA do DSH:
-
-1. **`dsh-plugin-subscriptions`**: Permite usar suas assinaturas do **ChatGPT** (Codex, GPT-4o, o1, o3-mini), **Claude**, **Grok** e **GitHub Copilot** no DSH via login OAuth na Web GUI.
-2. **`dsh-agy`**: Gerenciador de contas do **Google Antigravity**, com rotação automática contra erro 429 e pool multi-contas.
-
-### 📦 Instalação Automatizada dos Plugins no DSH:
-```powershell
-# No Windows (PowerShell):
-pwsh -File scripts/setup-dsh-plugins.ps1
-
-# No Linux / macOS:
-bash scripts/setup-dsh-plugins.sh
-```
-Veja o guia completo de arquitetura e modelos em [`references/dsh-plugins.md`](references/dsh-plugins.md).
+Compatível com **DeepSeek Harness (DSH)**, **Claude Code**, **Cursor**, **Codex**, **Gemini CLI** e qualquer runtime aderente à especificação [Agent Skills](https://agentskills.io).
 
 ---
 
-## 🚀 Instalação Rápida (Qualquer SO)
+## 🚀 Instalação Rápida da Skill (Qualquer SO)
 
 ### 1. Via Gerenciador Oficial de Skills (Recomendado)
 Funciona de forma idêntica no **Linux**, **macOS** e **Windows**:
@@ -41,7 +21,7 @@ npx skills add maugarciasa/workspace-dsh -g
 ```
 
 ### 2. Via Git Clone Manual
-Caso prefira clonar diretamente na pasta de skills do seu usuário:
+Caso prefira clonar diretamente na pasta de skills do usuário:
 
 - **Linux / macOS / WSL:**
   ```bash
@@ -54,7 +34,37 @@ Caso prefira clonar diretamente na pasta de skills do seu usuário:
 
 ---
 
-## 🎯 O que este Hub resolve?
+## 🔌 Ecossistema de Plugins do DeepSeek Harness (DSH)
+
+Este repositório inclui a receita completa de automação para provisionar todos os **11 plugins** que equipam o DeepSeek Harness desta máquina (sem carregar credenciais pessoais ou tokens privados):
+
+| Plugin | Origem / Versão | O que faz no DSH |
+| :--- | :--- | :--- |
+| **`dsh-plugin-subscriptions`** | npm (`^0.9.6`) | Roteia suas assinaturas existentes (**ChatGPT**, **Claude**, **Grok**, **Copilot**) para o DSH via OAuth Web Settings. |
+| **`dsh-agy`** | npm (`^0.4.0`) | Google Antigravity OAuth, pool multi-contas, rotação automática contra 429 e device fingerprinting. |
+| **`dsh-locale-pt-br`** | GitHub (`tonnymoura`) | Tradução completa da interface Web do DeepSeek Harness para Português do Brasil. |
+| **`dsh-undo-savepoint`** | npm (`^0.4.9`) | Snapshots automáticos de configuração/plugins, rollback com 1 clique (`undo_restore`) e safe mode. |
+| **`dsh-better-sidebar`** | npm (`^0.21.1`) | Barra lateral aprimorada com pinning, organização por projetos e busca rápida. |
+| **`dsh-git-graph`** | GitHub (`1841220388zzzcccxxx-star`) | Visualizador gráfico interativo da árvore de branches e commits do Git na GUI. |
+| **`@linxin666/dsh-client-ui-skill-explorer`** | npm (`^0.4.2`) | Skill Center visual na barra lateral para navegar, ativar, desativar e criar skills. |
+| **`@dawsondx/dsh-web-open`** | npm (`^0.1.2`) | Botão na interface para abrir links web, portas locais e documentações no navegador padrão. |
+| **`@khalilhsu/dsh-ui-query-navigator`** | npm (`^0.1.1`) | Navegador de histórico de perguntas, prompts anteriores e sessões de chat. |
+| **`dsh-distill-ui`** | Patch Cordis | Interface destilada com agrupamento em bloco único de tool calls e pensamento limpo. |
+| **`dsh-credits-hero`** | Patch Cordis | Indicador visual de cotas/créditos das contas de IA na página inicial. |
+
+### ⚡ Como Provisionar os Plugins do DSH em 1 Clique:
+```powershell
+# No Windows (PowerShell):
+pwsh -File scripts/setup-dsh-plugins.ps1
+
+# No Linux / macOS:
+bash scripts/setup-dsh-plugins.sh
+```
+Veja o guia detalhado em [`references/dsh-plugins.md`](references/dsh-plugins.md).
+
+---
+
+## 🎯 O que a Skill de IA resolve?
 
 1. **Roteamento Inteligente (120+ Skills):** Matriz de decisão rápida que indica exatamente qual skill usar para cada objetivo (frontend com Shadcn, vídeos com HyperFrames, banco de dados Supabase/Postgres, testes com Playwright, SEO/GEO, etc.).
 2. **Eficiência Drástica de Tokens:**
@@ -83,33 +93,13 @@ Caso prefira clonar diretamente na pasta de skills do seu usuário:
 
 ---
 
-## 🛠️ Suporte Multiplataforma & Scripts Inclusos
+## 🛠️ Scripts Utilitários Inclusos
 
-### 🐧 Linux e 🍎 macOS
-No Linux e Mac, você pode sincronizar as skills entre `~/.agents` e outros runtimes como o Claude Code (`~/.claude`) com o script Shell POSIX:
-
-```bash
-chmod +x scripts/sync-symlinks.sh
-./scripts/sync-symlinks.sh
-```
-
-### 🪟 Windows
-No Windows, os links simbólicos utilizam Junctions NTFS para evitar conflitos de caminhos longos:
-
-```powershell
-# Sincronizar Junctions NTFS com ~/.claude e ~/.dsh
-pwsh -File scripts/sync-junctions.ps1
-
-# Executar diagnóstico de saúde do ambiente (RTK, gh CLI, DSH e junctions)
-pwsh -File scripts/test-environment.ps1
-```
-
-### ⚙️ Validação de Conformidade (CI)
-O repositório inclui um validador de conformidade com a especificação [Agent Skills](https://agentskills.io) que roda nativamente em Node.js (e no GitHub Actions):
-
-```bash
-node scripts/validate-skill.mjs
-```
+- **`scripts/setup-dsh-plugins.ps1` / `.sh`**: Instalação e provisionamento de todos os plugins do DSH.
+- **`scripts/test-environment.ps1`**: Diagnóstico de integridade do ambiente (RTK, gh CLI, DSH, junctions e branches).
+- **`scripts/sync-junctions.ps1`**: Criação automática de Junctions NTFS para Windows.
+- **`scripts/sync-symlinks.sh`**: Sincronização automática de symlinks para Linux, macOS e WSL.
+- **`scripts/validate-skill.mjs`**: Linter oficial de conformidade da especificação [Agent Skills](https://agentskills.io).
 
 ---
 
@@ -118,17 +108,20 @@ node scripts/validate-skill.mjs
 ```
 workspace-dsh/
 ├── SKILL.md                          # Ponto de entrada oficial da skill
-├── README.md                         # Documentação e instruções de uso
+├── README.md                         # Documentação completa e instruções de uso
 ├── LICENSE                           # Licença permissiva MIT
 ├── references/
+│   ├── dsh-plugins.md                # Guia de todos os 11 plugins do DSH
 │   ├── skills-catalog.md             # Catálogo consolidado das 120+ skills
 │   ├── machine-rules.md              # Convenções de sessão (Caveman, Ponytail, Karpathy, RTK)
 │   └── project-nallon.md             # Diretrizes de arquitetura para Next.js e Supabase
 ├── scripts/
-│   ├── sync-symlinks.sh              # Sincronização para Linux/macOS (symlinks)
-│   ├── sync-junctions.ps1            # Sincronização para Windows (junctions NTFS)
+│   ├── setup-dsh-plugins.ps1         # Provisionador de plugins do DSH (Windows)
+│   ├── setup-dsh-plugins.sh          # Provisionador de plugins do DSH (Linux/macOS)
+│   ├── sync-symlinks.sh              # Sincronização de symlinks para Linux/macOS
+│   ├── sync-junctions.ps1            # Sincronização de junctions NTFS para Windows
 │   ├── test-environment.ps1          # Diagnóstico de integridade do ambiente
-│   └── validate-skill.mjs            # Linter oficial de especificação Agent Skills
+│   └── validate-skill.mjs            # Linter oficial de conformidade de skills
 └── .github/workflows/
     └── validate.yml                  # CI automatizado no GitHub Actions
 ```
