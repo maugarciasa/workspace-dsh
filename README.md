@@ -10,6 +10,26 @@
 Compatível com **Claude Code**, **DeepSeek Harness (DSH)**, **Cursor**, **Codex**, **Gemini CLI** e qualquer runtime aderente à especificação [Agent Skills](https://agentskills.io).
 
 ---
+---
+
+## 🔌 Plugins do DeepSeek Harness (ChatGPT & AGY)
+
+O repositório inclui a documentação e scripts de automação para os dois plugins essenciais de roteamento de IA do DSH:
+
+1. **`dsh-plugin-subscriptions`**: Permite usar suas assinaturas do **ChatGPT** (Codex, GPT-4o, o1, o3-mini), **Claude**, **Grok** e **GitHub Copilot** no DSH via login OAuth na Web GUI.
+2. **`dsh-agy`**: Gerenciador de contas do **Google Antigravity**, com rotação automática contra erro 429 e pool multi-contas.
+
+### 📦 Instalação Automatizada dos Plugins no DSH:
+```powershell
+# No Windows (PowerShell):
+pwsh -File scripts/setup-dsh-plugins.ps1
+
+# No Linux / macOS:
+bash scripts/setup-dsh-plugins.sh
+```
+Veja o guia completo de arquitetura e modelos em [`references/dsh-plugins.md`](references/dsh-plugins.md).
+
+---
 
 ## 🚀 Instalação Rápida (Qualquer SO)
 

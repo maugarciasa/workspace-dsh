@@ -106,6 +106,8 @@ New-Item -ItemType Junction -Path "$HOME\.claude\skills\<nome>" -Target "$HOME\.
 
 - [`references/skills-catalog.md`](references/skills-catalog.md): Catálogo completo das 120 skills, separadas por categoria, com status e trigger description.
 - [`references/machine-rules.md`](references/machine-rules.md): Especificação completa do ambiente Windows 11, junctions, RTK, Caveman, Ponytail, Karpathy e Git.
+- [`references/dsh-plugins.md`](references/dsh-plugins.md): Documentação e configuração dos plugins de IA (dsh-agy e dsh-plugin-subscriptions).
+- [`scripts/setup-dsh-plugins.ps1`](scripts/setup-dsh-plugins.ps1): Script de instalação automática dos plugins de IA no perfil do DSH.
 - [`references/project-nallon.md`](references/project-nallon.md): Diretrizes específicas do projeto Nallon (Next.js, Supabase, RLS, limites duros).
 - [`scripts/sync-junctions.ps1`](scripts/sync-junctions.ps1): Automação PowerShell para sincronizar Junctions no Windows.
 - [`scripts/test-environment.ps1`](scripts/test-environment.ps1): Diagnóstico automático em 1 clique da saúde de ferramentas (RTK, gh CLI, DSH e Junctions).
