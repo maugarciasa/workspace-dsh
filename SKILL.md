@@ -75,20 +75,27 @@ Para consultar o catálogo exaustivo com as 120 skills, veja [`references/skills
 | **Otimizar SEO para Google e AI Overviews (GEO)** | `seo` e `seo-geo` | Auditoria técnica de indexabilidade, Core Web Vitals, Schema.org e citabilidade por LLMs. |
 | **Criar ou testar uma nova skill para agentes** | `writing-skills` | Aplica o ciclo RED-GREEN-REFACTOR em documentações para agentes autônomos. |
 
-## 4. Gestão e Sincronização de Skills na Máquina
+## 4. Gestão e Sincronização de Skills por Sistema Operacional
 
-As skills reais ficam centralizadas em:
-`C:\Users\Mau\.agents\skills` (acessível pelo junction `C:\dev\agents-skills`).
+As skills residem nativamente em `~/.agents/skills` (padrão universal multiplataforma). Como alguns runtimes (ex: Claude Code) leem primariamente de `~/.claude/skills`, mantemos links simbólicos automáticos.
 
-Como o Claude Code só enxerga `~/.claude/skills`, novas skills devem possuir um **Junction NTFS**.
-
-### Sincronizar todas as skills automaticamente:
-Execute o script incluído:
-```powershell
-pwsh -File "C:\Users\Mau\.agents\skills\workspace-dsh\scripts\sync-junctions.ps1"
+### No Linux e macOS:
+Utilize o script Bash incluído para criar os links simbólicos de uma vez:
+```bash
+chmod +x scripts/sync-symlinks.sh
+./scripts/sync-symlinks.sh
+```
+Ou manualmente para uma skill específica:
+```bash
+ln -s ~/.agents/skills/<nome> ~/.claude/skills/<nome>
 ```
 
-### Criar Junction manual para uma skill:
+### No Windows:
+Utilize o script PowerShell incluído para criar Junctions NTFS:
+```powershell
+pwsh -File scripts/sync-junctions.ps1
+```
+Ou manualmente para uma skill específica:
 ```powershell
 New-Item -ItemType Junction -Path "$HOME\.claude\skills\<nome>" -Target "$HOME\.agents\skills\<nome>"
 ```
