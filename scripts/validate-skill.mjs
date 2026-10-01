@@ -96,6 +96,23 @@ async function validate() {
     }
   }
 
+  
+  // 7. Validar suíte de benchmark / evals (se presente)
+  const evalsFile = path.join(root, "evals", "evals.json");
+  try {
+    const rawEvals = await fs.readFile(evalsFile, "utf-8");
+    const jsonEvals = JSON.parse(rawEvals);
+    if (Array.isArray(jsonEvals.evals) && jsonEvals.evals.length > 0) {
+      pass(`Suíte de benchmark / evals válida (${jsonEvals.evals.length} cenários de teste).`);
+    } else {
+      error("evals/evals.json não contém uma lista de evals válida.");
+    }
+  } catch (err) {
+    if (err.code !== "ENOENT") {
+      error("Erro ao ler/parsear evals/evals.json: " + err.message);
+    }
+  }
+
   if (hasErrors) {
     console.error("\nValidação falhou. Corrija os erros acima.");
     process.exit(1);

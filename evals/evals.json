@@ -1,0 +1,59 @@
+{
+  "skill": "workspace-dsh",
+  "version": "1.0.0",
+  "description": "Testes e benchmarks de avaliação de orquestração para o Workspace DSH",
+  "evals": [
+    {
+      "id": "route-video-launch",
+      "prompt": "Preciso fazer um Reels do Instagram em português apresentando meu novo projeto de software.",
+      "expected_skills": [
+        "brag-instagram",
+        "brag"
+      ],
+      "criteria": "Deve indicar brag-instagram ou brag como skill primária para criação de Reels narrados em pt-BR."
+    },
+    {
+      "id": "token-efficiency-mode",
+      "prompt": "Como reduzo drasticamente o gasto de tokens no chat sem perder a precisão técnica das respostas?",
+      "expected_skills": [
+        "caveman"
+      ],
+      "criteria": "Deve recomendar a ativação da skill caveman no nível full para respostas telegráficas e econômicas."
+    },
+    {
+      "id": "anti-overengineering",
+      "prompt": "Quero revisar o código que escrevi para eliminar abstrações desnecessárias e pacotes que a stdlib já resolve.",
+      "expected_skills": [
+        "ponytail-review",
+        "ponytail-audit",
+        "ponytail"
+      ],
+      "criteria": "Deve sugerir ponytail-review ou ponytail-audit aplicando o princípio YAGNI."
+    },
+    {
+      "id": "dsh-setup-plugins",
+      "prompt": "Como faço para instalar e rotear o ChatGPT (Codex) e o Google Antigravity no meu DeepSeek Harness?",
+      "expected_skills": [
+        "workspace-dsh"
+      ],
+      "criteria": "Deve apontar para os scripts de setup (setup-dsh-plugins.ps1 / .sh) e para os plugins dsh-plugin-subscriptions e dsh-agy."
+    },
+    {
+      "id": "cross-platform-sync",
+      "prompt": "Estou no Linux ou macOS, como sincronizo minhas skills entre ~/.agents/skills e ~/.claude/skills?",
+      "expected_skills": [
+        "workspace-dsh"
+      ],
+      "criteria": "Deve indicar a execução do script scripts/sync-symlinks.sh."
+    },
+    {
+      "id": "investigate-regression",
+      "prompt": "Um teste parou de passar sem motivo aparente e não sei o que causou o bug.",
+      "expected_skills": [
+        "systematic-debugging",
+        "investigate-first"
+      ],
+      "criteria": "Deve indicar systematic-debugging para investigar e isolar causa raiz antes de editar código."
+    }
+  ]
+}

@@ -95,11 +95,13 @@ Veja o guia detalhado em [`references/dsh-plugins.md`](references/dsh-plugins.md
 
 ## 🛠️ Scripts Utilitários Inclusos
 
+- **`scripts/menu.ps1` / `.sh`**: **Menu interativo unificado** no terminal com diagnóstico, busca, setup e sincronização.
 - **`scripts/setup-dsh-plugins.ps1` / `.sh`**: Instalação e provisionamento de todos os plugins do DSH.
 - **`scripts/test-environment.ps1`**: Diagnóstico de integridade do ambiente (RTK, gh CLI, DSH, junctions e branches).
 - **`scripts/sync-junctions.ps1`**: Criação automática de Junctions NTFS para Windows.
 - **`scripts/sync-symlinks.sh`**: Sincronização automática de symlinks para Linux, macOS e WSL.
 - **`scripts/validate-skill.mjs`**: Linter oficial de conformidade da especificação [Agent Skills](https://agentskills.io).
+- **`evals/evals.json`**: Suíte de avaliação e benchmarks de orquestração.
 
 ---
 
@@ -110,6 +112,8 @@ workspace-dsh/
 ├── SKILL.md                          # Ponto de entrada oficial da skill
 ├── README.md                         # Documentação completa e instruções de uso
 ├── LICENSE                           # Licença permissiva MIT
+├── evals/
+│   └── evals.json                    # Cenários de teste e avaliação oficial de skills
 ├── plugins/                          # Plugins locais de UI do DeepSeek Harness
 │   ├── dsh-credits-hero/             # Chip indicador de cotas/créditos ChatGPT/Codex na home
 │   └── dsh-distill-ui/               # Interface destilada com tool batching em bloco único
@@ -119,6 +123,8 @@ workspace-dsh/
 │   ├── machine-rules.md              # Convenções de sessão (Caveman, Ponytail, Karpathy, RTK)
 │   └── project-nallon.md             # Diretrizes de arquitetura para Next.js e Supabase
 ├── scripts/
+│   ├── menu.ps1                      # Menu interativo unificado (Windows)
+│   ├── menu.sh                       # Menu interativo unificado (Linux/macOS)
 │   ├── setup-dsh-plugins.ps1         # Provisionador de plugins do DSH (Windows)
 │   ├── setup-dsh-plugins.sh          # Provisionador de plugins do DSH (Linux/macOS)
 │   ├── sync-symlinks.sh              # Sincronização de symlinks para Linux/macOS
