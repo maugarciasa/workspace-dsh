@@ -1,6 +1,6 @@
 {
   "name": "dsh-credits-hero",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Chip de credito (cota das contas ChatGPT/Codex do pool) na linha do modo PTC da pagina inicial.",
   "type": "module",
   "main": "lib/index.js",

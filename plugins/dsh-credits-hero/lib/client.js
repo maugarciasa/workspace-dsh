@@ -187,7 +187,7 @@ window.__ModuleLoader__.load({
       top: "32px",
       left: 0,
       zIndex: 400,
-      minWidth: "375px",
+      minWidth: "390px",
       padding: "10px 14px",
       border: "1px solid rgba(127,127,127,.35)",
       borderRadius: "10px",
@@ -212,13 +212,24 @@ window.__ModuleLoader__.load({
       cursor: "help"
     };
     const rowStyle = { display: "flex", gap: "8px", alignItems: "center", padding: "3px 0" };
-    const rowNameWrap = { flex: "1 1 auto", display: "inline-flex", alignItems: "center", gap: "6px", overflow: "hidden" };
-    const rowNameStyle = { fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
-    const badgeStyle = { fontSize: "10.5px", padding: "1px 6px", borderRadius: "4px", background: "rgba(248,81,73,.14)", color: "#f85149", border: "1px solid rgba(248,81,73,.22)", whiteSpace: "nowrap", fontWeight: 500 };
-    const rowNumStyle = { fontVariantNumeric: "tabular-nums", minWidth: "52px", textAlign: "right", whiteSpace: "nowrap", fontWeight: 600, fontSize: "11.5px" };
+    const rowNameStyle = { width: "125px", flexShrink: 0, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
+    const badgeWrapStyle = { flex: "1 1 auto", display: "flex", justifyContent: "flex-end", paddingRight: "4px" };
+    const badgeStyle = { fontSize: "10px", padding: "1px 5px", borderRadius: "4px", background: "rgba(248,81,73,.14)", color: "#f85149", border: "1px solid rgba(248,81,73,.22)", whiteSpace: "nowrap", fontWeight: 500, letterSpacing: "-0.01em" };
+    const rowNum5hStyle = { fontVariantNumeric: "tabular-nums", width: "48px", textAlign: "right", whiteSpace: "nowrap", fontWeight: 600, fontSize: "11.5px", flexShrink: 0 };
+    const rowNumWeekStyle = { fontVariantNumeric: "tabular-nums", width: "52px", textAlign: "right", whiteSpace: "nowrap", fontWeight: 600, fontSize: "11.5px", flexShrink: 0 };
     const dividerStyle = { height: "1px", background: "rgba(127,127,127,.22)", margin: "8px 0 6px 0" };
-    const footerStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "11px", opacity: 0.85, paddingTop: "2px" };
-    const refreshBtnStyle = { background: "none", border: "none", color: "inherit", cursor: "pointer", opacity: 0.85, padding: "2px 4px", fontSize: "11px", textDecoration: "underline" };
+    const footerStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "11px", color: "var(--dsw-alias-label-secondary, #d4d4d8)", paddingTop: "2px" };
+    const refreshBtnStyle = {
+      background: "rgba(255,255,255,.06)",
+      border: "1px solid rgba(255,255,255,.14)",
+      color: "var(--dsw-alias-label-primary, #f4f4f5)",
+      borderRadius: "4px",
+      cursor: "pointer",
+      padding: "2px 7px",
+      fontSize: "10.5px",
+      fontWeight: 500,
+      transition: "all .12s ease"
+    };
 
     function remPct(usedValue) {
       if (usedValue === undefined) return "-";
@@ -300,8 +311,9 @@ window.__ModuleLoader__.load({
           style: nameStyle,
           title: top.available ? "Melhor conta disponível no momento" : (top.label || top.key)
         }, (top.available ? "★ " : "") + shortName(top.label, top.key)),
-        h("span", { key: "s", style: Object.assign({}, dimStyle, { color: remColor(top.session) }), title: "Limite de 5h restante: " + topSessionRem }, "5h " + topSessionRem + " disp."),
-        h("span", { key: "w", style: Object.assign({}, dimStyle, { color: remColor(top.weekly) }), title: "Limite semanal restante: " + topWeeklyRem }, "Semana " + topWeeklyRem + " disp.")
+        h("span", { key: "s", style: Object.assign({}, dimStyle, { color: remColor(top.session) }), title: "Limite de 5h disponível: " + topSessionRem }, "5H " + topSessionRem),
+        h("span", { key: "sep", style: { opacity: 0.4 } }, "·"),
+        h("span", { key: "w", style: Object.assign({}, dimStyle, { color: remColor(top.weekly) }), title: "Limite semanal disponível: " + topWeeklyRem }, "Semana " + topWeeklyRem)
       ];
 
       if (open) {
@@ -316,9 +328,10 @@ window.__ModuleLoader__.load({
             title: "Os percentuais representam o limite ainda disponível."
           }, [
             h("span", { key: "hdot", style: { width: "7px", opacity: 0 } }),
-            h("span", { key: "hn", style: { flex: "1 1 auto" } }, "CONTA"),
-            h("span", { key: "hs", style: { minWidth: "52px", textAlign: "right" } }, "5H"),
-            h("span", { key: "hw", style: { minWidth: "52px", textAlign: "right" } }, "SEMANA")
+            h("span", { key: "hn", style: { width: "125px", flexShrink: 0 } }, "CONTA"),
+            h("span", { key: "hb", style: { flex: "1 1 auto" } }),
+            h("span", { key: "hs", style: { width: "48px", textAlign: "right", flexShrink: 0 } }, "5H"),
+            h("span", { key: "hw", style: { width: "52px", textAlign: "right", flexShrink: 0 } }, "SEMANA")
           ]),
           h("div", { key: "rows" }, rows.map((row, idx) => {
             const sRem = remPct(row.session);
@@ -344,21 +357,25 @@ window.__ModuleLoader__.load({
               style: rowStyle
             }, [
               h("span", { key: "dot", style: Object.assign({}, dotStyle, { background: rowDotColor(row) }) }),
-              h("div", { key: "wrap", style: rowNameWrap }, [
-                isBestAccount
-                  ? h("span", { key: "star", style: { color: "#e3b341", fontWeight: 700, cursor: "help" }, title: starTitle }, "★ ")
-                  : null,
-                h("span", { key: "n", style: rowNameStyle, title: row.label || row.key }, shortName(row.label, row.key)),
+              h("span", {
+                key: "n",
+                style: rowNameStyle,
+                title: (isBestAccount ? "★ " + starTitle + "\n" : "") + (row.label || row.key)
+              }, [
+                isBestAccount ? h("span", { key: "star", style: { color: "#e3b341", fontWeight: 700, marginRight: "3px", cursor: "help" }, title: starTitle }, "★") : null,
+                shortName(row.label, row.key)
+              ]),
+              h("div", { key: "wrap", style: badgeWrapStyle }, [
                 row.statusText ? h("span", { key: "b", style: badgeStyle }, row.statusText) : null
               ]),
               h("span", {
                 key: "s",
-                style: Object.assign({}, rowNumStyle, { color: sColor, cursor: sVal < 10 ? "help" : "inherit" }),
+                style: Object.assign({}, rowNum5hStyle, { color: sColor, cursor: sVal < 10 ? "help" : "inherit" }),
                 title: sTooltip
               }, sRem),
               h("span", {
                 key: "w",
-                style: Object.assign({}, rowNumStyle, { color: wColor, cursor: wVal < 10 ? "help" : "inherit" }),
+                style: Object.assign({}, rowNumWeekStyle, { color: wColor, cursor: wVal < 10 ? "help" : "inherit" }),
                 title: wTooltip
               }, wRem)
             ]);
