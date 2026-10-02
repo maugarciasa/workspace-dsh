@@ -19,6 +19,13 @@ window.__ModuleLoader__.load({
       [data-distill-batch-hidden="true"] {
         display: none !important;
       }
+      
+      /* SUPRIMIR PERMANENTEMENTE BANNER FIXO VERMELHO DE TAB JÁ REGISTRADA */
+      div[style*="z-index: 2147483000"],
+      div[style*="z-index:2147483000"] {
+        display: none !important;
+      }
+
       /* 1. COMPACT TOOL CALLS */
       [data-chat-anchor-key^="call:"] {
         margin: 2px 0 !important;
@@ -1669,6 +1676,14 @@ window.__ModuleLoader__.load({
           updateHeaderOverflow();
           updateTodoProgressBars(document.body);
           suppressHarmlessBetterSidebarToast(document.body);
+
+        const redBars = document.querySelectorAll('div[style*="2147483000"]');
+        for (const b of redBars) {
+          if ((b.textContent || "").includes("dsh-better-sidebar")) {
+            b.remove();
+          }
+        }
+
         } catch (err) {
           console.debug("[dsh-distill-ui] cycle guard:", err);
         } finally {
