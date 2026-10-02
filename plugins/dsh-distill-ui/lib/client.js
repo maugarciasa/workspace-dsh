@@ -4,7 +4,7 @@ window.__ModuleLoader__.load({
     var module = { exports: {} };
     var exports = module.exports;
 
-    console.log("[dsh-distill-ui] v1.7.0 - Todo Progress Bar & Visual Gauge Active");
+    console.log("[dsh-distill-ui] v1.8.0 - Frontend Design Studio Polish Active");
 
     const CSS_STYLES = `
       /* ==========================================================================
@@ -296,20 +296,23 @@ window.__ModuleLoader__.load({
         margin: 12px 0 !important;
       }
 
-      /* 4. TAREFAS / TODO PANEL - REFINAMENTO DE ALTO NÍVEL */
+      /* 4. TAREFAS / TODO PANEL - DESIGN STUDIO POLISH (/frontend-design) */
       section[data-testid="todo-panel"],
       [data-chat-flow-kind="todo-panel"],
       [class*="TodoPanel"] {
         border-radius: 8px !important;
-        border: 1px solid var(--dsw-alias-border-l1, rgba(255, 255, 255, 0.08)) !important;
-        background: var(--dsw-alias-bg-base, rgba(18, 18, 20, 0.95)) !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        background: rgba(17, 17, 19, 0.85) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
         margin: 6px auto !important;
-        transition: all 0.15s ease !important;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
         overflow: hidden !important;
+        position: relative !important;
       }
 
-      /* 1. SCROLLBAR ULTRAFINA E ELEGANTE */
+      /* 1. SCROLLBAR ULTRAFINA E FLUIDA */
       section[data-testid="todo-panel"] [class*="content"],
       section[data-testid="todo-panel"] [class*="list"],
       section[data-testid="todo-panel"] [class*="body"],
@@ -317,16 +320,16 @@ window.__ModuleLoader__.load({
       section[data-testid="todo-panel"] ol {
         max-height: 380px !important;
         scrollbar-width: thin !important;
-        scrollbar-color: rgba(255, 255, 255, 0.15) transparent !important;
+        scrollbar-color: rgba(255, 255, 255, 0.12) transparent !important;
       }
 
       section[data-testid="todo-panel"] ::-webkit-scrollbar {
-        width: 4px !important;
-        height: 4px !important;
+        width: 3.5px !important;
+        height: 3.5px !important;
       }
 
       section[data-testid="todo-panel"] ::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.16) !important;
+        background: rgba(255, 255, 255, 0.15) !important;
         border-radius: 4px !important;
       }
 
@@ -338,42 +341,42 @@ window.__ModuleLoader__.load({
         background: transparent !important;
       }
 
-      /* 2. LINHAS DE TAREFA - ESPAÇAMENTO E TIPOGRAFIA */
+      /* 2. LINHAS DE TAREFA - HIERARQUIA & SPACING */
       section[data-testid="todo-panel"] li,
       section[data-testid="todo-panel"] [role="listitem"],
       section[data-testid="todo-panel"] [class*="item"] {
-        padding: 4px 8px !important;
-        margin: 2px 4px !important;
+        padding: 5px 10px !important;
+        margin: 2px 6px !important;
         border-radius: 6px !important;
-        font-size: 12.5px !important;
-        line-height: 1.4 !important;
-        transition: background 0.12s ease, opacity 0.12s ease !important;
+        font-size: 12px !important;
+        line-height: 1.45 !important;
+        transition: background 0.15s ease, opacity 0.15s ease !important;
       }
 
-      /* 3. DIMMING EM TAREFAS CONCLUÍDAS */
+      /* 3. TAREFAS CONCLUÍDAS - DISCRETAS & LEGÍVEIS */
       section[data-testid="todo-panel"] li:has([data-state="completed"]),
       section[data-testid="todo-panel"] li:has(svg[class*="check"]),
       section[data-testid="todo-panel"] li:has([class*="completed"]),
       section[data-testid="todo-panel"] [data-status="completed"] {
-        opacity: 0.55 !important;
+        opacity: 0.5 !important;
       }
       section[data-testid="todo-panel"] li:has([data-state="completed"]):hover {
         opacity: 0.85 !important;
       }
 
-      /* 4. DESTAQUE VISUAL NA TAREFA EM ANDAMENTO */
+      /* 4. TAREFA EM ANDAMENTO - GLOW & ELEVAÇÃO */
       section[data-testid="todo-panel"] li:has([data-state="in_progress"]),
       section[data-testid="todo-panel"] li:has([class*="inProgress"]),
       section[data-testid="todo-panel"] li:has([class*="spinner"]),
       section[data-testid="todo-panel"] li:has([class*="loading"]),
       section[data-testid="todo-panel"] [data-status="in_progress"] {
-        background: rgba(59, 130, 246, 0.1) !important;
-        border: 1px solid rgba(59, 130, 246, 0.25) !important;
+        background: rgba(59, 130, 246, 0.08) !important;
+        border: 1px solid rgba(59, 130, 246, 0.22) !important;
         font-weight: 500 !important;
         color: #93c5fd !important;
+        box-shadow: 0 0 12px rgba(59, 130, 246, 0.08) inset !important;
       }
 
-      /* Ícone da tarefa ativa com pulsação suave */
       section[data-testid="todo-panel"] li:has([data-state="in_progress"]) svg,
       section[data-testid="todo-panel"] [data-status="in_progress"] svg {
         filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.6)) !important;
@@ -382,49 +385,83 @@ window.__ModuleLoader__.load({
       /* 5. TAREFAS PENDENTES */
       section[data-testid="todo-panel"] li:has([data-state="pending"]),
       section[data-testid="todo-panel"] [data-status="pending"] {
-        opacity: 0.8 !important;
-        color: var(--dsw-alias-label-secondary, #d4d4d8) !important;
+        opacity: 0.75 !important;
+        color: #a1a1aa !important;
       }
 
-      /* 6. CABEÇALHO COMPACTO COM MINI BARRA DE PROGRESSO */
+      /* 6. CABEÇALHO ELEGANTE & MINI BARRA INSET INTEGRADA */
       section[data-testid="todo-panel"] [class*="header"] {
-        padding: 6px 12px !important;
+        padding: 7px 14px 9px 14px !important;
         border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
         background: rgba(255, 255, 255, 0.02) !important;
         position: relative !important;
       }
 
+      section[data-testid="todo-panel"]:not(:has([aria-expanded="true"])) [class*="header"] {
+        border-bottom: none !important;
+      }
+
+      /* Pílulas de Contagem no Cabeçalho */
+      .dsh-distill-todo-pill-group {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+        margin-left: 6px !important;
+      }
+
+      .dsh-distill-todo-chip {
+        font-size: 11px !important;
+        padding: 1px 6px !important;
+        border-radius: 4px !important;
+        font-family: var(--ds-font-family-code, monospace) !important;
+        font-weight: 500 !important;
+      }
+      .dsh-distill-todo-chip-done {
+        background: rgba(16, 185, 129, 0.1) !important;
+        color: #34d399 !important;
+      }
+      .dsh-distill-todo-chip-active {
+        background: rgba(59, 130, 246, 0.12) !important;
+        color: #60a5fa !important;
+      }
+      .dsh-distill-todo-chip-pending {
+        background: rgba(255, 255, 255, 0.04) !important;
+        color: #71717a !important;
+      }
+
+      /* Barra de Progresso Inset Elegante (100% da largura, com margem embutida) */
       .dsh-distill-todo-progress-track {
         position: absolute !important;
         bottom: 0 !important;
-        left: 0 !important;
-        width: 100% !important;
-        height: 2.5px !important;
-        background: rgba(255, 255, 255, 0.06) !important;
+        left: 12px !important;
+        right: 12px !important;
+        width: auto !important;
+        height: 2px !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-radius: 2px !important;
         overflow: hidden !important;
       }
 
       .dsh-distill-todo-progress-fill {
         height: 100% !important;
-        background: linear-gradient(90deg, #10b981, #3b82f6) !important;
+        background: linear-gradient(90deg, #10b981 0%, #34d399 70%, #60a5fa 100%) !important;
         border-radius: 2px !important;
-        transition: width 0.3s ease !important;
+        transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        box-shadow: 0 0 6px rgba(16, 185, 129, 0.5) !important;
       }
 
+      /* Badge de Porcentagem Lapidado */
       .dsh-distill-todo-pct-badge {
-        font-size: 10.5px !important;
+        font-size: 10px !important;
         padding: 1px 6px !important;
-        border-radius: 4px !important;
+        border-radius: 9999px !important;
         background: rgba(16, 185, 129, 0.12) !important;
         color: #34d399 !important;
         border: 1px solid rgba(16, 185, 129, 0.25) !important;
         font-family: var(--ds-font-family-code, monospace) !important;
         font-weight: 600 !important;
-        margin-left: 8px !important;
-      }
-
-      section[data-testid="todo-panel"]:not(:has([aria-expanded="true"])) [class*="header"] {
-        border-bottom: none !important;
+        margin-left: auto !important;
+        letter-spacing: -0.02em !important;
       }
 
       /* 5. MÉTRICAS INFERIORES DISCRETAS */
@@ -1403,20 +1440,24 @@ window.__ModuleLoader__.load({
 
           const text = (header.textContent || "").toLowerCase();
           const matchCompleted = text.match(/(\d+)\s*(conclu[ií]da|completed)/i);
-          const matchTotal = text.match(/(\d+)\s*(tarefa|pendente|em andamento|in_progress|pending|task)/gi);
+          const matchPending = text.match(/(\d+)\s*(pendente|pending)/i);
+          const matchActive = text.match(/(\d+)\s*(em andamento|in_progress)/i);
 
-          // Contar itens reais se disponível
           const items = panel.querySelectorAll('li, [role="listitem"]');
           let total = items.length;
           let completed = 0;
+          let active = 0;
+          let pending = 0;
 
           if (total > 0) {
             completed = panel.querySelectorAll('li:has([data-state="completed"]), li:has(svg[class*="check"]), [data-status="completed"]').length;
-          } else if (matchCompleted) {
-            completed = parseInt(matchCompleted[1], 10);
-            const pend = text.match(/(\d+)\s*(pendente|pending)/i);
-            const inProg = text.match(/(\d+)\s*(em andamento|in_progress)/i);
-            total = completed + (pend ? parseInt(pend[1], 10) : 0) + (inProg ? parseInt(inProg[1], 10) : 0);
+            active = panel.querySelectorAll('li:has([data-state="in_progress"]), li:has([class*="spinner"]), [data-status="in_progress"]').length;
+            pending = total - completed - active;
+          } else {
+            completed = matchCompleted ? parseInt(matchCompleted[1], 10) : 0;
+            active = matchActive ? parseInt(matchActive[1], 10) : 0;
+            pending = matchPending ? parseInt(matchPending[1], 10) : 0;
+            total = completed + active + pending;
           }
 
           if (total > 0) {
@@ -1443,7 +1484,7 @@ window.__ModuleLoader__.load({
               header.appendChild(badge);
             }
             badge.textContent = pct + "%";
-            badge.title = completed + " de " + total + " tarefas concluídas";
+            badge.title = completed + " de " + total + " tarefas concluídas (" + active + " em andamento)";
           }
         }
       } catch (err) {
