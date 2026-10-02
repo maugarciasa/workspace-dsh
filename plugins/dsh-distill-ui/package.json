@@ -1,6 +1,6 @@
 {
   "name": "dsh-distill-ui",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Distilled UI for DeepSeek Harness Web: single-block tool batching, protected assistant messages, clean reasoning, and header overflow.",
   "type": "module",
   "main": "lib/index.js",

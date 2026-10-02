@@ -4,7 +4,7 @@ window.__ModuleLoader__.load({
     var module = { exports: {} };
     var exports = module.exports;
 
-    console.log("[dsh-distill-ui] v1.6.0 - Polished Todo Panel Active");
+    console.log("[dsh-distill-ui] v1.7.0 - Todo Progress Bar & Visual Gauge Active");
 
     const CSS_STYLES = `
       /* ==========================================================================
@@ -386,11 +386,41 @@ window.__ModuleLoader__.load({
         color: var(--dsw-alias-label-secondary, #d4d4d8) !important;
       }
 
-      /* 6. CABEÇALHO COMPACTO */
+      /* 6. CABEÇALHO COMPACTO COM MINI BARRA DE PROGRESSO */
       section[data-testid="todo-panel"] [class*="header"] {
         padding: 6px 12px !important;
         border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
         background: rgba(255, 255, 255, 0.02) !important;
+        position: relative !important;
+      }
+
+      .dsh-distill-todo-progress-track {
+        position: absolute !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 2.5px !important;
+        background: rgba(255, 255, 255, 0.06) !important;
+        overflow: hidden !important;
+      }
+
+      .dsh-distill-todo-progress-fill {
+        height: 100% !important;
+        background: linear-gradient(90deg, #10b981, #3b82f6) !important;
+        border-radius: 2px !important;
+        transition: width 0.3s ease !important;
+      }
+
+      .dsh-distill-todo-pct-badge {
+        font-size: 10.5px !important;
+        padding: 1px 6px !important;
+        border-radius: 4px !important;
+        background: rgba(16, 185, 129, 0.12) !important;
+        color: #34d399 !important;
+        border: 1px solid rgba(16, 185, 129, 0.25) !important;
+        font-family: var(--ds-font-family-code, monospace) !important;
+        font-weight: 600 !important;
+        margin-left: 8px !important;
       }
 
       section[data-testid="todo-panel"]:not(:has([aria-expanded="true"])) [class*="header"] {
@@ -1363,6 +1393,64 @@ window.__ModuleLoader__.load({
     /**
      * HEADER OVERFLOW & ZEN/DEV MODE TOGGLE
      */
+    
+    function updateTodoProgressBars(root) {
+      try {
+        const panels = root.querySelectorAll('section[data-testid="todo-panel"], [data-chat-flow-kind="todo-panel"]');
+        for (const panel of panels) {
+          const header = panel.querySelector('[class*="header"]');
+          if (!header) continue;
+
+          const text = (header.textContent || "").toLowerCase();
+          const matchCompleted = text.match(/(\d+)\s*(conclu[ií]da|completed)/i);
+          const matchTotal = text.match(/(\d+)\s*(tarefa|pendente|em andamento|in_progress|pending|task)/gi);
+
+          // Contar itens reais se disponível
+          const items = panel.querySelectorAll('li, [role="listitem"]');
+          let total = items.length;
+          let completed = 0;
+
+          if (total > 0) {
+            completed = panel.querySelectorAll('li:has([data-state="completed"]), li:has(svg[class*="check"]), [data-status="completed"]').length;
+          } else if (matchCompleted) {
+            completed = parseInt(matchCompleted[1], 10);
+            const pend = text.match(/(\d+)\s*(pendente|pending)/i);
+            const inProg = text.match(/(\d+)\s*(em andamento|in_progress)/i);
+            total = completed + (pend ? parseInt(pend[1], 10) : 0) + (inProg ? parseInt(inProg[1], 10) : 0);
+          }
+
+          if (total > 0) {
+            const pct = Math.round((completed / total) * 100);
+
+            // Injetar ou atualizar barra de progresso no fundo do header
+            let track = header.querySelector(".dsh-distill-todo-progress-track");
+            if (!track) {
+              track = document.createElement("div");
+              track.className = "dsh-distill-todo-progress-track";
+              const fill = document.createElement("div");
+              fill.className = "dsh-distill-todo-progress-fill";
+              track.appendChild(fill);
+              header.appendChild(track);
+            }
+            const fill = track.querySelector(".dsh-distill-todo-progress-fill");
+            if (fill) fill.style.width = pct + "%";
+
+            // Injetar porcentagem visual no título se não existir
+            let badge = header.querySelector(".dsh-distill-todo-pct-badge");
+            if (!badge) {
+              badge = document.createElement("span");
+              badge.className = "dsh-distill-todo-pct-badge";
+              header.appendChild(badge);
+            }
+            badge.textContent = pct + "%";
+            badge.title = completed + " de " + total + " tarefas concluídas";
+          }
+        }
+      } catch (err) {
+        console.debug("[dsh-distill-ui] todo progress guard:", err);
+      }
+    }
+
     function updateHeaderOverflow() {
       try {
         const headerActions = document.querySelector('header [data-slot="conversation.session.header.actions"]') ||
@@ -1469,6 +1557,7 @@ window.__ModuleLoader__.load({
         try {
           updateVirtualBatches(document.body);
           updateHeaderOverflow();
+          updateTodoProgressBars(document.body);
         } catch (err) {
           console.debug("[dsh-distill-ui] cycle guard:", err);
         } finally {
