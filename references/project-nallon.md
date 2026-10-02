@@ -20,6 +20,8 @@
    - Novas RPCs ou funções no Postgres nascem sem permissão de execução pública (`REVOKE EXECUTE ON FUNCTION FROM PUBLIC`) e são concedidas explicitamente para `authenticated`.
 4. **Veto a `npm run db:push` ou `supabase db push` em produção:**
    - Migrations são aplicadas com rigor por controle de versão e CI/CD.
+5. **Merge e Deploy Controlados:**
+   - Push na branch `main` somente via `scripts/merge-remoto.sh` e deploy exclusivamente por `scripts/deploy.sh`, ambos dependendo de comando expresso do mantenedor; veto irrestrito a `--force`.
 5. **Jev como validador:**
    - O projeto possui a skill `jev-classificar` em `.claude/skills/jev-classificar/` para triagem de textos, mensagens e suporte.
 
