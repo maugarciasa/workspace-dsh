@@ -135,6 +135,15 @@ try {
   } elseif (Get-Command npm -ErrorAction SilentlyContinue) {
     npm install
   }
+  # Patch para dsh-better-sidebar: desativa workspaceFence por padrão quando o settings service não está montado no DSH (evita bloquear arquivos em %TEMP% ou fora do workspace)
+  $sidebarIndex = Join-Path $ProfileDir "node_modules\dsh-better-sidebar\lib\index.js"
+  if (Test-Path $sidebarIndex) {
+    (Get-Content $sidebarIndex -Raw).Replace(
+      'if (value === null || typeof value !== "object") return true;',
+      'if (value === null || typeof value !== "object") return false;'
+    ) | Set-Content -Path $sidebarIndex -Encoding utf8
+  }
+
   Write-Host "Todos os plugins foram instalados com sucesso!" -ForegroundColor Green
 } finally {
   Pop-Location

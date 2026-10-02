@@ -56,6 +56,12 @@ else
   exit 1
 fi
 
+# Patch para dsh-better-sidebar: desativa workspaceFence por padrão quando o settings service não está montado
+SIDEBAR_INDEX="${PROFILE_DIR}/node_modules/dsh-better-sidebar/lib/index.js"
+if [ -f "${SIDEBAR_INDEX}" ]; then
+  sed -i 's/if (value === null || typeof value !== "object") return true;/if (value === null || typeof value !== "object") return false;/g' "${SIDEBAR_INDEX}"
+fi
+
 echo ""
 echo "==> Todos os plugins foram instalados com sucesso!"
 echo "    Reinicie o DeepSeek Harness para carregar as alterações."
