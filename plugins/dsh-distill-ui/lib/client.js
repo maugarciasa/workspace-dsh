@@ -7,6 +7,34 @@ window.__ModuleLoader__.load({
     console.log("[dsh-distill-ui] v1.9.0 - Robust Interactive Overflow Dropdown Active");
 
     const CSS_STYLES = `
+      
+      /* AJUSTE PARA ELIMINAR SCROLL FORÇADO NA TELA DE CONFIGURAÇÕES DE SNAPSHOTS */
+      [data-undo-settings-page="true"],
+      [data-undo-settings-section="true"] {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px 18px !important;
+        max-width: 100% !important;
+        align-items: start !important;
+      }
+
+      [data-undo-settings-page="true"] .u_pair,
+      [data-undo-settings-page="true"] [class*="pair"] {
+        margin-bottom: 2px !important;
+      }
+
+      [data-undo-settings-page="true"] > div:last-child {
+        grid-column: span 2 !important;
+        margin-top: 6px !important;
+      }
+
+      /* Ocultar barra de rolagem em modais de configurações */
+      [class*="settingsContent"],
+      [class*="modalBody"],
+      [class*="dialogBody"] {
+        scrollbar-width: thin !important;
+      }
+
       /* ==========================================================================
          DSH Distill UI v1.2.0 - Ultimate Distilled Suite
          Features: Micro-Ticker, Timeline, Noise Sanitizer, Filter Pills, Zen Mode
