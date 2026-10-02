@@ -1,6 +1,6 @@
 # Workspace DSH (Agent Skill & Environment Kit)
 
-[![Release: v1.1.0](https://img.shields.io/badge/Release-v1.1.0-blue.svg)](https://github.com/maugarciasa/workspace-dsh/releases/tag/v1.1.0)
+[![Release: v1.1.0](https://img.shields.io/badge/Release-v1.2.0-blue.svg)](https://github.com/maugarciasa/workspace-dsh/releases/tag/v1.2.0)
 [![Validate Agent Skill](https://github.com/maugarciasa/workspace-dsh/actions/workflows/validate.yml/badge.svg)](https://github.com/maugarciasa/workspace-dsh/actions/workflows/validate.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![OS: Linux | macOS | Windows](https://img.shields.io/badge/OS-Linux%20%7C%20macOS%20%7C%20Windows-blue)](https://github.com/maugarciasa/workspace-dsh)
@@ -66,7 +66,7 @@ Este repositório inclui a receita completa de automação para provisionar todo
 | **`@linxin666/dsh-client-ui-skill-explorer`** | npm (`^0.4.2`) | Skill Center visual na barra lateral para navegar, ativar, desativar e criar skills. |
 | **`@dawsondx/dsh-web-open`** | npm (`^0.1.2`) | Botão na interface para abrir links web, portas locais e documentações no navegador padrão. |
 | **`@khalilhsu/dsh-ui-query-navigator`** | npm (`^0.1.1`) | Navegador de histórico de perguntas, prompts anteriores e sessões de chat. |
-| **`dsh-distill-ui`** | Patch Cordis | Interface destilada com agrupamento em bloco único de tool calls e pensamento limpo. |
+| **`dsh-distill-ui`** | Patch Cordis (v1.8.0) | Interface destilada: agrupamento limpo em bloco único, filtro de falhas, atalhos (Alt+Z/X) e painel de tarefas lapidado (/frontend-design). |
 | **`dsh-credits-hero`** | Patch Cordis | Indicador visual de cotas/créditos das contas de IA na página inicial. |
 
 ### ⚡ Como Provisionar os Plugins do DSH em 1 Clique:
