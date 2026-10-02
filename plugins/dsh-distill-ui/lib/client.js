@@ -4,7 +4,7 @@ window.__ModuleLoader__.load({
     var module = { exports: {} };
     var exports = module.exports;
 
-    console.log("[dsh-distill-ui] v1.4.0 - Clean Badges & Smart Error Filtering Active");
+    console.log("[dsh-distill-ui] v1.5.0 - Copy Summary & Global Hotkeys Active");
 
     const CSS_STYLES = `
       /* ==========================================================================
@@ -427,6 +427,22 @@ window.__ModuleLoader__.load({
         letter-spacing: -0.01em !important;
         flex-shrink: 0 !important;
         margin-left: 8px !important;
+      }
+
+      .dsh-distill-copy-btn {
+        font-size: 10.5px !important;
+        padding: 1px 6px !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 4px !important;
+        color: var(--dsw-alias-label-tertiary, #a1a1aa) !important;
+        cursor: pointer !important;
+        margin-left: 6px !important;
+        transition: all 0.15s ease !important;
+      }
+      .dsh-distill-copy-btn:hover {
+        background: rgba(255, 255, 255, 0.12) !important;
+        color: var(--dsw-alias-label-primary, #ffffff) !important;
       }
 
       .dsh-distill-ticker {
@@ -1176,10 +1192,31 @@ window.__ModuleLoader__.load({
               ${runningTickerHtml}
               ${errorTagHtml}
             </div>
-            <span class="dsh-distill-batch-badge">⚡ ${run.length} agrupadas</span>
+            <div style="display: flex; align-items: center;">
+              <span class="dsh-distill-batch-badge" title="Pressione Alt+Z para fechar todas, Alt+X para abrir todas">⚡ ${run.length} agrupadas</span>
+              <button type="button" class="dsh-distill-copy-btn" title="Copiar resumo destas operações para a área de transferência">📋 Copiar</button>
+            </div>
           </div>
           ${filterPillsHtml}
         `;
+
+        // Botão Copiar Resumo
+        const copyBtn = header.querySelector(".dsh-distill-copy-btn");
+        if (copyBtn) {
+          copyBtn.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            const summaryLines = run.map((r, idx) => {
+              const text = (r.el.textContent || "").trim().replace(/\s+/g, " ").slice(0, 100);
+              return (idx + 1) + ". [" + r.tool + "] " + text;
+            });
+            const textToCopy = "Resumo (" + run.length + " operações):\n" + summaryLines.join("\n");
+            navigator.clipboard.writeText(textToCopy).then(() => {
+              const prev = copyBtn.textContent;
+              copyBtn.textContent = "✓ Copiado!";
+              setTimeout(() => { copyBtn.textContent = prev; }, 1500);
+            }).catch(() => {});
+          });
+        }
 
         // Se o usuário clicar na tag de erro, abre a barra e seleciona o filtro de erros
         const errTag = header.querySelector(".dsh-distill-batch-error-tag");
@@ -1380,6 +1417,17 @@ window.__ModuleLoader__.load({
 
     function initEngine() {
       injectStyles();
+
+      // Atalho de teclado global: Alt + Z (Recolher todas as barras) / Alt + X (Expandir todas)
+      window.addEventListener("keydown", (e) => {
+        if (e.altKey && (e.key === "z" || e.key === "Z")) {
+          const headers = document.querySelectorAll(".dsh-distill-batch-header[data-expanded='true']");
+          headers.forEach(h => h.click());
+        } else if (e.altKey && (e.key === "x" || e.key === "X")) {
+          const headers = document.querySelectorAll(".dsh-distill-batch-header:not([data-expanded='true'])");
+          headers.forEach(h => h.click());
+        }
+      });
 
       try {
         const observer = new MutationObserver((mutations) => {
