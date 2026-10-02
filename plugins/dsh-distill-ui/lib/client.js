@@ -4,7 +4,7 @@ window.__ModuleLoader__.load({
     var module = { exports: {} };
     var exports = module.exports;
 
-    console.log("[dsh-distill-ui] v1.3.0 - Unified Intermediate Batching Active");
+    console.log("[dsh-distill-ui] v1.3.1 - Consolidated Single Header Active");
 
     const CSS_STYLES = `
       /* ==========================================================================
@@ -12,6 +12,10 @@ window.__ModuleLoader__.load({
          Features: Micro-Ticker, Timeline, Noise Sanitizer, Filter Pills, Zen Mode
          ========================================================================== */
 
+      /* Hide duplicate standalone disclosure rows when inside batch */
+      [data-distill-batch-hidden="true"] {
+        display: none !important;
+      }
       /* 1. COMPACT TOOL CALLS */
       [data-chat-anchor-key^="call:"] {
         margin: 2px 0 !important;
@@ -881,7 +885,15 @@ window.__ModuleLoader__.load({
       const anchor = child.getAttribute("data-chat-anchor-key") || "";
       if (anchor.startsWith("call:")) return true;
 
-      if (child.querySelector?.('[data-tool], [data-variant="bash"], [data-sample="bash"], [class*="ToolCall"]')) {
+      // Detectar qualquer container de subchamadas ou disclosure com "chamada de ferramenta"
+      if (child.hasAttribute("data-subcalls") || child.querySelector?.('[data-subcalls="true"]')) return true;
+
+      const text = (child.textContent || "").trim().toLowerCase();
+      if (text.includes("chamada de ferramenta") || text.includes("tool call") || text.includes("chamadas de ferramentas")) {
+        return true;
+      }
+
+      if (child.querySelector?.('[data-tool], [data-variant="bash"], [data-sample="bash"], [class*="ToolCall"], [class*="callRow"]')) {
         if (!hasAssistantReplyContent(child) && !child.closest('[data-chat-flow-kind="assistant-step"]')) {
           return true;
         }
@@ -916,6 +928,10 @@ window.__ModuleLoader__.load({
       }
       if (isPureReasoning(child)) {
         return { tool: "raciocínio", cat: "think" };
+      }
+      const text = (child.textContent || "").trim().toLowerCase();
+      if (text.includes("chamada de ferramenta") || text.includes("tool call")) {
+        return { tool: "ferramenta", cat: "mutation" };
       }
       const toolName = getEffectiveToolName(child);
       let displayTool = toolName;
@@ -977,7 +993,8 @@ window.__ModuleLoader__.load({
           const info = getEffectiveItemInfo(child, isSubcallsContainer);
           currentRun.push({ el: child, tool: info.tool, cat: info.cat });
         } else {
-          if (currentRun.length >= 1) runs.push(currentRun);
+          // Só fecha o run se for um passo de resposta real com conteúdo markdown
+          if (currentRun.length >= 2) runs.push(currentRun);
           currentRun = [];
 
           if (child.hasAttribute("data-distill-batch-id")) {
@@ -988,11 +1005,11 @@ window.__ModuleLoader__.load({
           }
         }
       }
-      if (currentRun.length >= 1) runs.push(currentRun);
+      if (currentRun.length >= 2) runs.push(currentRun);
 
       const validBatchIds = new Set();
       for (const run of runs) {
-        if (run.length >= 1) {
+        if (run.length >= 2) {
           const firstItem = run[0].el;
           const firstKey = firstItem.getAttribute("data-chat-anchor-key") ||
                            firstItem.getAttribute("data-chat-call-id") ||
@@ -1010,7 +1027,7 @@ window.__ModuleLoader__.load({
       }
 
       for (const run of runs) {
-        if (run.length < 1) continue;
+        if (run.length < 2) continue;
 
         const firstItem = run[0].el;
         const firstKey = firstItem.getAttribute("data-chat-anchor-key") ||
