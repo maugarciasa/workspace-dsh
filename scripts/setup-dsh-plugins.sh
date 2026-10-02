@@ -37,7 +37,8 @@ PLUGINS=(
   "@khalilhsu/dsh-ui-query-navigator@^0.1.1"
   "@linxin666/dsh-client-ui-skill-explorer@^0.4.2"
   "dsh-agy@^0.4.0"
-  "dsh-better-sidebar@^0.21.1"
+  # 0.21+ exige primitives ^0.1.7-rc.1 (icones Icon*Regular); quebra no DSH < 0.1.7.
+  "dsh-better-sidebar@~0.19.1"
   "github:1841220388zzzcccxxx-star/dsh-git-graph"
   "github:tonnymoura/dsh-locale-pt-br"
   "dsh-plugin-subscriptions@^0.9.6"

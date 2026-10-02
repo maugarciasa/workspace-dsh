@@ -56,7 +56,10 @@ $desiredDependencies = @{
   "@khalilhsu/dsh-ui-query-navigator" = "^0.1.1"
   "@linxin666/dsh-client-ui-skill-explorer" = "^0.4.2"
   "dsh-agy" = "^0.4.0"
-  "dsh-better-sidebar" = "^0.21.1"
+  # 0.21+ exige @deepseek-ai/dsh-client-ui-primitives ^0.1.7-rc.1 (icones renomeados de
+  # Icon*16/14 para Icon*Regular). Em DSH < 0.1.7 esses icones vem undefined e o
+  # visualizador de arquivos do sidebar quebra com React error #130.
+  "dsh-better-sidebar" = "~0.19.1"
   "dsh-git-graph" = "github:1841220388zzzcccxxx-star/dsh-git-graph"
   "dsh-locale-pt-br" = "github:tonnymoura/dsh-locale-pt-br"
   "dsh-plugin-subscriptions" = "^0.9.6"

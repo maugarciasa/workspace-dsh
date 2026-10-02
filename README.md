@@ -61,13 +61,30 @@ Este repositório inclui a receita completa de automação para provisionar todo
 | **`dsh-agy`** | npm (`^0.4.0`) | Google Antigravity OAuth, pool multi-contas, rotação automática contra 429 e device fingerprinting. |
 | **`dsh-locale-pt-br`** | GitHub (`tonnymoura`) | Tradução completa da interface Web do DeepSeek Harness para Português do Brasil. |
 | **`dsh-undo-savepoint`** | npm (`^0.4.9`) | Snapshots automáticos de configuração/plugins, rollback com 1 clique (`undo_restore`) e safe mode. |
-| **`dsh-better-sidebar`** | npm (`^0.21.1`) | Barra lateral aprimorada com pinning, organização por projetos e busca rápida. |
+| **`dsh-better-sidebar`** | npm (`~0.19.1`) | Barra lateral aprimorada com pinning, organização por projetos e busca rápida. A linha 0.21+ exige DSH ≥ 0.1.7 (ver [nota de compatibilidade](#compatibilidade-do-dsh-better-sidebar)); no DSH 0.1.5 ela quebra o visualizador de arquivos. |
 | **`dsh-git-graph`** | GitHub (`1841220388zzzcccxxx-star`) | Visualizador gráfico interativo da árvore de branches e commits do Git na GUI. |
 | **`@linxin666/dsh-client-ui-skill-explorer`** | npm (`^0.4.2`) | Skill Center visual na barra lateral para navegar, ativar, desativar e criar skills. |
 | **`@dawsondx/dsh-web-open`** | npm (`^0.1.2`) | Botão na interface para abrir links web, portas locais e documentações no navegador padrão. |
 | **`@khalilhsu/dsh-ui-query-navigator`** | npm (`^0.1.1`) | Navegador de histórico de perguntas, prompts anteriores e sessões de chat. |
 | **`dsh-distill-ui`** | Patch Cordis (v1.9.0) | Interface destilada: agrupamento limpo em bloco único, filtro de falhas, atalhos (Alt+Z/X) e painel de tarefas lapidado (/frontend-design). |
 | **`dsh-credits-hero`** | Patch Cordis | Indicador visual de cotas/créditos das contas de IA na página inicial. |
+
+### 🧷 Compatibilidade do `dsh-better-sidebar`
+
+O plugin consome o módulo `@deepseek-ai/dsh-client-ui-primitives` servido pelo próprio DSH, e a
+API de ícones mudou entre as versões — por isso o pino é **`~0.19.1`**:
+
+| Versão do plugin | Primitivas exigidas | Nomes dos ícones | DSH compatível |
+| :--- | :--- | :--- | :--- |
+| `~0.19.1` (fixado) | `^0.1.5-rc.1` | `IconCodeOutline16`, `IconChevronRightOutline14`, ... | DSH 0.1.5.x |
+| `>= 0.21.0` | `^0.1.7-rc.1` | `IconCodeOutlineRegular`, `IconChevronRightOutlineRegular`, ... | DSH >= 0.1.7 |
+
+Com o plugin 0.21.x em um DSH 0.1.5, os ícones chegam como `undefined` e o painel direito falha
+com `Minified React error #130` ao clicar em **Open** / **Preview** de um arquivo — o arquivo
+não abre.
+
+Regra prática: manter a linha `0.19.x` **enquanto `dsh --version` for < 0.1.7**. Ao atualizar o
+CLI para >= 0.1.7 (ideal: >= 0.2.0), o pino pode voltar para `^0.21.1`.
 
 ### ⚡ Como Provisionar os Plugins do DSH em 1 Clique:
 ```powershell
