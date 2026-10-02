@@ -8,31 +8,52 @@ window.__ModuleLoader__.load({
 
     const CSS_STYLES = `
       
-      /* AJUSTE PARA ELIMINAR SCROLL FORÇADO NA TELA DE CONFIGURAÇÕES DE SNAPSHOTS */
+      /* AJUSTE COMPACTO E RESPONSIVO PARA CONFIGURAÇÕES DE SNAPSHOTS (SEM SCROLL HORIZONTAL) */
       [data-undo-settings-page="true"],
       [data-undo-settings-section="true"] {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 8px 18px !important;
-        max-width: 100% !important;
-        align-items: start !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 4px !important;
+        width: 100% !important;
+        max-width: 600px !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
       }
 
       [data-undo-settings-page="true"] .u_pair,
       [data-undo-settings-page="true"] [class*="pair"] {
-        margin-bottom: 2px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 8px !important;
+        padding: 1px 0 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
       }
 
-      [data-undo-settings-page="true"] > div:last-child {
-        grid-column: span 2 !important;
-        margin-top: 6px !important;
+      [data-undo-settings-page="true"] input[type="text"] {
+        max-width: 260px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
       }
 
-      /* Ocultar barra de rolagem em modais de configurações */
+      [data-undo-settings-page="true"] .u_hint,
+      [data-undo-settings-page="true"] [class*="hint"] {
+        font-size: 10.5px !important;
+        line-height: 1.3 !important;
+        color: var(--dsw-alias-label-tertiary, #71717a) !important;
+        margin-top: -2px !important;
+        margin-bottom: 3px !important;
+      }
+
+      /* Scrollbar vertical elegante e sem scroll horizontal */
+      [data-slot="settings.dialog.content"],
       [class*="settingsContent"],
       [class*="modalBody"],
       [class*="dialogBody"] {
+        overflow-x: hidden !important;
         scrollbar-width: thin !important;
+        scrollbar-color: rgba(255, 255, 255, 0.15) transparent !important;
       }
 
       /* ==========================================================================
