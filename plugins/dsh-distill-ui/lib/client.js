@@ -20,6 +20,18 @@ window.__ModuleLoader__.load({
         display: none !important;
       }
       
+      
+      /* SUPRESSÃO ABSOLUTA DE BANNERS FLUTUANTES DO BETTER-SIDEBAR */
+      div:has-text("[dsh-better-sidebar]"),
+      div[style*="z-index"][style*="bottom: 8px"],
+      div[style*="z-index"][style*="bottom:8px"],
+      div[style*="ui-monospace"]:has-text("better-sidebar") {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+      }
+
       /* SUPRIMIR PERMANENTEMENTE BANNER FIXO VERMELHO DE TAB JÁ REGISTRADA */
       div[style*="z-index: 2147483000"],
       div[style*="z-index:2147483000"] {
@@ -1676,6 +1688,13 @@ window.__ModuleLoader__.load({
           updateHeaderOverflow();
           updateTodoProgressBars(document.body);
           suppressHarmlessBetterSidebarToast(document.body);
+
+        document.querySelectorAll("div").forEach(el => {
+          if (el.textContent && el.textContent.startsWith("[dsh-better-sidebar]")) {
+            el.remove();
+          }
+        });
+
 
         const redBars = document.querySelectorAll('div[style*="2147483000"]');
         for (const b of redBars) {
