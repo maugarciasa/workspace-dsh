@@ -4,7 +4,7 @@ window.__ModuleLoader__.load({
     var module = { exports: {} };
     var exports = module.exports;
 
-    console.log("[dsh-distill-ui] v1.8.0 - Frontend Design Studio Polish Active");
+    console.log("[dsh-distill-ui] v1.9.0 - Robust Interactive Overflow Dropdown Active");
 
     const CSS_STYLES = `
       /* ==========================================================================
@@ -1498,82 +1498,134 @@ window.__ModuleLoader__.load({
                               document.querySelector('header [class*="headerActions"]');
         if (!headerActions) return;
 
-        const currentMode = localStorage.getItem("dsh-distill-view-mode") || "zen";
-        document.documentElement.setAttribute("data-dsh-distill-mode", currentMode);
-
-        const hasSecondary = !!headerActions.querySelector('[data-undo-header="true"], .dsh-query-nav-toggle');
-        if (!hasSecondary) return;
-
-        // Injetar alternador de Modo Zen/Dev dentro do container de ações
-        const undoHeader = headerActions.querySelector('[data-undo-header="true"]');
-        if (undoHeader && !undoHeader.querySelector(".dsh-distill-mode-toggle-btn")) {
-          const modeBtn = document.createElement("button");
-          modeBtn.type = "button";
-          modeBtn.className = "dsh-distill-mode-toggle-btn";
-          modeBtn.innerHTML = currentMode === "zen" ? "🌿 Modo: <b>Zen</b> (Foco)" : "💻 Modo: <b>Dev</b> (Completo)";
-          modeBtn.title = "Alternar entre modo Zen (foco limpo) e modo Dev (completo)";
-          modeBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const cur = localStorage.getItem("dsh-distill-view-mode") || "zen";
-            const next = cur === "zen" ? "dev" : "zen";
-            localStorage.setItem("dsh-distill-view-mode", next);
-            document.documentElement.setAttribute("data-dsh-distill-mode", next);
-            modeBtn.innerHTML = next === "zen" ? "🌿 Modo: <b>Zen</b> (Foco)" : "💻 Modo: <b>Dev</b> (Completo)";
-          });
-          undoHeader.insertBefore(modeBtn, undoHeader.firstChild);
-        }
+        headerActions.style.position = "relative";
 
         let trigger = headerActions.querySelector(".dsh-distill-overflow-trigger");
         if (!trigger) {
           trigger = document.createElement("button");
           trigger.type = "button";
           trigger.className = "dsh-distill-overflow-trigger";
-          trigger.title = "Mais ações e modo de exibição";
-          trigger.setAttribute("aria-label", "Mais ações da sessão");
+          trigger.title = "Opções do DSH e Modo de Exibição";
+          trigger.setAttribute("aria-label", "Opções adicionais");
           trigger.setAttribute("aria-haspopup", "menu");
           trigger.setAttribute("aria-expanded", "false");
           trigger.setAttribute("tabindex", "0");
           trigger.textContent = "•••";
 
-          const toggleMenu = () => {
-            const isOpen = headerActions.getAttribute("data-distill-menu-open") === "true";
-            const next = !isOpen;
-            headerActions.setAttribute("data-distill-menu-open", next ? "true" : "false");
-            trigger.setAttribute("data-active", next ? "true" : "false");
-            trigger.setAttribute("aria-expanded", next ? "true" : "false");
+          let menuEl = null;
+
+          const closeMenu = () => {
+            if (menuEl) {
+              menuEl.remove();
+              menuEl = null;
+            }
+            trigger.setAttribute("data-active", "false");
+            trigger.setAttribute("aria-expanded", "false");
+          };
+
+          const openMenu = () => {
+            if (menuEl) {
+              closeMenu();
+              return;
+            }
+
+            const currentMode = localStorage.getItem("dsh-distill-view-mode") || "zen";
+
+            menuEl = document.createElement("div");
+            menuEl.className = "dsh-distill-menu-dropdown";
+            menuEl.setAttribute("role", "menu");
+
+            // 1. Item Modo de Exibição (Zen vs Dev)
+            const modeItem = document.createElement("button");
+            modeItem.type = "button";
+            modeItem.className = "dsh-distill-menu-dropdown-item";
+            modeItem.innerHTML = currentMode === "zen" ? "🌿 Modo: <b>Zen (Foco Limpo)</b>" : "💻 Modo: <b>Dev (Completo)</b>";
+            modeItem.addEventListener("click", () => {
+              const cur = localStorage.getItem("dsh-distill-view-mode") || "zen";
+              const next = cur === "zen" ? "dev" : "zen";
+              localStorage.setItem("dsh-distill-view-mode", next);
+              document.documentElement.setAttribute("data-dsh-distill-mode", next);
+              modeItem.innerHTML = next === "zen" ? "🌿 Modo: <b>Zen (Foco Limpo)</b>" : "💻 Modo: <b>Dev (Completo)</b>";
+              closeMenu();
+            });
+            menuEl.appendChild(modeItem);
+
+            // 2. Item Recolher Tudo (Alt+Z)
+            const collapseAllItem = document.createElement("button");
+            collapseAllItem.type = "button";
+            collapseAllItem.className = "dsh-distill-menu-dropdown-item";
+            collapseAllItem.innerHTML = "🔽 Recolher todas as operações <span style='margin-left:auto; opacity:0.5; font-size:10px;'>Alt+Z</span>";
+            collapseAllItem.addEventListener("click", () => {
+              document.querySelectorAll(".dsh-distill-batch-header[data-expanded='true']").forEach(h => h.click());
+              closeMenu();
+            });
+            menuEl.appendChild(collapseAllItem);
+
+            // 3. Item Expandir Tudo (Alt+X)
+            const expandAllItem = document.createElement("button");
+            expandAllItem.type = "button";
+            expandAllItem.className = "dsh-distill-menu-dropdown-item";
+            expandAllItem.innerHTML = "🔼 Expandir todas as operações <span style='margin-left:auto; opacity:0.5; font-size:10px;'>Alt+X</span>";
+            expandAllItem.addEventListener("click", () => {
+              document.querySelectorAll(".dsh-distill-batch-header:not([data-expanded='true'])").forEach(h => h.click());
+              closeMenu();
+            });
+            menuEl.appendChild(expandAllItem);
+
+            // 4. Divisor
+            const div = document.createElement("div");
+            div.className = "dsh-distill-menu-divider";
+            menuEl.appendChild(div);
+
+            // 5. Item Snapshots / Undo Savepoint (se existir no DOM)
+            const undoBtn = document.querySelector('[data-undo-header="true"] button, [data-undo-header="true"]');
+            if (undoBtn) {
+              const undoItem = document.createElement("button");
+              undoItem.type = "button";
+              undoItem.className = "dsh-distill-menu-dropdown-item";
+              undoItem.innerHTML = "⏪ Snapshots & Rollback (Undo)";
+              undoItem.addEventListener("click", () => {
+                undoBtn.click();
+                closeMenu();
+              });
+              menuEl.appendChild(undoItem);
+            }
+
+            // 6. Item Histórico de Prompts (se existir)
+            const navBtn = document.querySelector('.dsh-query-nav-toggle, [class*="QueryNavigator"] button');
+            if (navBtn) {
+              const navItem = document.createElement("button");
+              navItem.type = "button";
+              navItem.className = "dsh-distill-menu-dropdown-item";
+              navItem.innerHTML = "🔍 Histórico de Prompts";
+              navItem.addEventListener("click", () => {
+                navBtn.click();
+                closeMenu();
+              });
+              menuEl.appendChild(navItem);
+            }
+
+            headerActions.appendChild(menuEl);
+            trigger.setAttribute("data-active", "true");
+            trigger.setAttribute("aria-expanded", "true");
           };
 
           trigger.addEventListener("click", (e) => {
             e.stopPropagation();
-            toggleMenu();
-          });
-
-          trigger.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              toggleMenu();
-            } else if (e.key === "Escape") {
-              headerActions.setAttribute("data-distill-menu-open", "false");
-              trigger.setAttribute("data-active", "false");
-              trigger.setAttribute("aria-expanded", "false");
-            }
+            if (menuEl) closeMenu();
+            else openMenu();
           });
 
           document.addEventListener("click", (e) => {
-            if (!headerActions.contains(e.target)) {
-              headerActions.setAttribute("data-distill-menu-open", "false");
-              trigger.setAttribute("data-active", "false");
-              trigger.setAttribute("aria-expanded", "false");
+            if (menuEl && !menuEl.contains(e.target) && e.target !== trigger) {
+              closeMenu();
             }
           });
 
           document.addEventListener("keydown", (e) => {
-            if (e.key === "Escape") {
-              const wasOpen = headerActions.getAttribute("data-distill-menu-open") === "true";
-              headerActions.setAttribute("data-distill-menu-open", "false");
-              trigger.setAttribute("data-active", "false");
-              trigger.setAttribute("aria-expanded", "false");
-              if (wasOpen) trigger.focus();
+            if (e.key === "Escape" && menuEl) {
+              closeMenu();
+              trigger.focus();
             }
           });
 
