@@ -4,7 +4,7 @@ window.__ModuleLoader__.load({
     var module = { exports: {} };
     var exports = module.exports;
 
-    console.log("[dsh-distill-ui] v1.3.1 - Consolidated Single Header Active");
+    console.log("[dsh-distill-ui] v1.4.0 - Clean Badges & Smart Error Filtering Active");
 
     const CSS_STYLES = `
       /* ==========================================================================
@@ -689,6 +689,21 @@ window.__ModuleLoader__.load({
       return "other";
     }
 
+    
+    function getToolIcon(tool) {
+      const t = (tool || "").toLowerCase();
+      if (t === "pwsh" || t === "bash" || t === "terminal" || t === "cmd") return { icon: "💻", label: "Terminal" };
+      if (t === "raciocínio" || t === "think" || t === "pensamento") return { icon: "🧠", label: "Raciocínio" };
+      if (t === "ler" || t === "read") return { icon: "📖", label: "Leitura" };
+      if (t === "gravar" || t === "write") return { icon: "✍️", label: "Gravação" };
+      if (t === "editar" || t === "edit") return { icon: "📝", label: "Edição" };
+      if (t === "grep") return { icon: "🔍", label: "Grep" };
+      if (t === "glob") return { icon: "📂", label: "Busca de Arquivos" };
+      if (t === "read_image" || t === "imagem") return { icon: "🖼️", label: "Imagem" };
+      if (t.includes("context") || t.includes("subagente") || t.includes("agent")) return { icon: "🤖", label: "Contexto/Agentes" };
+      return { icon: "⚡", label: tool };
+    }
+
     function getCategoryTitle(run) {
       const distinctCats = Array.from(new Set(run.map(r => r.cat)));
       if (distinctCats.length === 1) {
@@ -1104,13 +1119,16 @@ window.__ModuleLoader__.load({
         }
 
         const sortedVerbs = Object.entries(verbCounts).sort((a, b) => b[1] - a[1]);
-        const maxShown = 4;
-        const shownVerbs = sortedVerbs.slice(0, maxShown).map(([v, count]) => count + " " + v);
+        const maxShown = 5;
+        const shownBadges = sortedVerbs.slice(0, maxShown).map(([v, count]) => {
+          const info = getToolIcon(v);
+          return '<span class="dsh-distill-icon-badge" title="' + count + ' ' + info.label + '">' + info.icon + ' ' + count + '</span>';
+        });
         if (sortedVerbs.length > maxShown) {
           const remaining = sortedVerbs.slice(maxShown).reduce((acc, [, c]) => acc + c, 0);
-          shownVerbs.push("+" + remaining + " outras");
+          shownBadges.push('<span class="dsh-distill-icon-badge" title="' + remaining + ' outras operações">+' + remaining + '</span>');
         }
-        const verbsDetail = shownVerbs.join(" · ");
+        const verbsDetail = shownBadges.join(" ");
         const categoryTitle = getCategoryTitle(run);
 
         let isExpanded = false;
@@ -1153,7 +1171,8 @@ window.__ModuleLoader__.load({
           <div class="dsh-distill-batch-top">
             <div class="dsh-distill-batch-title">
               <span class="dsh-distill-batch-chevron">${chevronChar}</span>
-              <span>${run.length} ${categoryTitle} · ${verbsDetail}</span>
+              <span style="font-weight: 600; color: var(--dsw-alias-label-primary, #f4f4f5);">${run.length} ${categoryTitle}</span>
+              <span style="display: inline-flex; gap: 4px; align-items: center; margin-left: 2px;">${verbsDetail}</span>
               ${runningTickerHtml}
               ${errorTagHtml}
             </div>
@@ -1161,6 +1180,26 @@ window.__ModuleLoader__.load({
           </div>
           ${filterPillsHtml}
         `;
+
+        // Se o usuário clicar na tag de erro, abre a barra e seleciona o filtro de erros
+        const errTag = header.querySelector(".dsh-distill-batch-error-tag");
+        if (errTag) {
+          errTag.addEventListener("click", (ev) => {
+            ev.stopPropagation();
+            header.setAttribute("data-user-toggled", "true");
+            header.setAttribute("data-expanded", "true");
+            header.setAttribute("data-active-filter", "error");
+            const ch = header.querySelector(".dsh-distill-batch-chevron");
+            if (ch) ch.textContent = "▼";
+            const fb = header.querySelector(".dsh-distill-batch-filters");
+            if (fb) fb.style.display = "flex";
+            const pButtons = header.querySelectorAll(".dsh-distill-filter-pill");
+            for (const b of pButtons) b.setAttribute("data-active", b.getAttribute("data-filter") === "error" ? "true" : "false");
+            const items = container.querySelectorAll('[data-distill-batch-id="' + batchId + '"]');
+            for (const it of items) it.setAttribute("data-distill-batch-hidden", "false");
+            applyBatchFilter(container, batchId, "error");
+          });
+        }
 
         // Wire click handlers on filter pills
         const pillButtons = header.querySelectorAll(".dsh-distill-filter-pill");
