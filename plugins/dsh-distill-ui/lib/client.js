@@ -4,7 +4,7 @@ window.__ModuleLoader__.load({
     var module = { exports: {} };
     var exports = module.exports;
 
-    console.log("[dsh-distill-ui] v1.5.0 - Copy Summary & Global Hotkeys Active");
+    console.log("[dsh-distill-ui] v1.6.0 - Polished Todo Panel Active");
 
     const CSS_STYLES = `
       /* ==========================================================================
@@ -296,43 +296,105 @@ window.__ModuleLoader__.load({
         margin: 12px 0 !important;
       }
 
-      /* 4. TAREFAS / TODO PANEL - STATUS BAR COMPACTA */
-      section[data-testid="todo-panel"] {
-        border-radius: 6px !important;
-        border: 1px solid var(--dsw-alias-border-l1, rgba(255, 255, 255, 0.06)) !important;
-        background: var(--dsw-alias-bg-hover, rgba(255, 255, 255, 0.015)) !important;
-        box-shadow: none !important;
-        margin: 3px auto !important;
+      /* 4. TAREFAS / TODO PANEL - REFINAMENTO DE ALTO NÍVEL */
+      section[data-testid="todo-panel"],
+      [data-chat-flow-kind="todo-panel"],
+      [class*="TodoPanel"] {
+        border-radius: 8px !important;
+        border: 1px solid var(--dsw-alias-border-l1, rgba(255, 255, 255, 0.08)) !important;
+        background: var(--dsw-alias-bg-base, rgba(18, 18, 20, 0.95)) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+        margin: 6px auto !important;
         transition: all 0.15s ease !important;
+        overflow: hidden !important;
       }
 
-      section[data-testid="todo-panel"]:not(:has([aria-expanded="true"])) [class*="body"] {
-        padding: 3px 8px !important;
-        gap: 0 !important;
+      /* 1. SCROLLBAR ULTRAFINA E ELEGANTE */
+      section[data-testid="todo-panel"] [class*="content"],
+      section[data-testid="todo-panel"] [class*="list"],
+      section[data-testid="todo-panel"] [class*="body"],
+      section[data-testid="todo-panel"] ul,
+      section[data-testid="todo-panel"] ol {
+        max-height: 380px !important;
+        scrollbar-width: thin !important;
+        scrollbar-color: rgba(255, 255, 255, 0.15) transparent !important;
+      }
+
+      section[data-testid="todo-panel"] ::-webkit-scrollbar {
+        width: 4px !important;
+        height: 4px !important;
+      }
+
+      section[data-testid="todo-panel"] ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.16) !important;
+        border-radius: 4px !important;
+      }
+
+      section[data-testid="todo-panel"] ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.3) !important;
+      }
+
+      section[data-testid="todo-panel"] ::-webkit-scrollbar-track {
+        background: transparent !important;
+      }
+
+      /* 2. LINHAS DE TAREFA - ESPAÇAMENTO E TIPOGRAFIA */
+      section[data-testid="todo-panel"] li,
+      section[data-testid="todo-panel"] [role="listitem"],
+      section[data-testid="todo-panel"] [class*="item"] {
+        padding: 4px 8px !important;
+        margin: 2px 4px !important;
+        border-radius: 6px !important;
+        font-size: 12.5px !important;
+        line-height: 1.4 !important;
+        transition: background 0.12s ease, opacity 0.12s ease !important;
+      }
+
+      /* 3. DIMMING EM TAREFAS CONCLUÍDAS */
+      section[data-testid="todo-panel"] li:has([data-state="completed"]),
+      section[data-testid="todo-panel"] li:has(svg[class*="check"]),
+      section[data-testid="todo-panel"] li:has([class*="completed"]),
+      section[data-testid="todo-panel"] [data-status="completed"] {
+        opacity: 0.55 !important;
+      }
+      section[data-testid="todo-panel"] li:has([data-state="completed"]):hover {
+        opacity: 0.85 !important;
+      }
+
+      /* 4. DESTAQUE VISUAL NA TAREFA EM ANDAMENTO */
+      section[data-testid="todo-panel"] li:has([data-state="in_progress"]),
+      section[data-testid="todo-panel"] li:has([class*="inProgress"]),
+      section[data-testid="todo-panel"] li:has([class*="spinner"]),
+      section[data-testid="todo-panel"] li:has([class*="loading"]),
+      section[data-testid="todo-panel"] [data-status="in_progress"] {
+        background: rgba(59, 130, 246, 0.1) !important;
+        border: 1px solid rgba(59, 130, 246, 0.25) !important;
+        font-weight: 500 !important;
+        color: #93c5fd !important;
+      }
+
+      /* Ícone da tarefa ativa com pulsação suave */
+      section[data-testid="todo-panel"] li:has([data-state="in_progress"]) svg,
+      section[data-testid="todo-panel"] [data-status="in_progress"] svg {
+        filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.6)) !important;
+      }
+
+      /* 5. TAREFAS PENDENTES */
+      section[data-testid="todo-panel"] li:has([data-state="pending"]),
+      section[data-testid="todo-panel"] [data-status="pending"] {
+        opacity: 0.8 !important;
+        color: var(--dsw-alias-label-secondary, #d4d4d8) !important;
+      }
+
+      /* 6. CABEÇALHO COMPACTO */
+      section[data-testid="todo-panel"] [class*="header"] {
+        padding: 6px 12px !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+        background: rgba(255, 255, 255, 0.02) !important;
       }
 
       section[data-testid="todo-panel"]:not(:has([aria-expanded="true"])) [class*="header"] {
-        min-height: 22px !important;
-        height: 22px !important;
-        gap: 6px !important;
-      }
-
-      section[data-testid="todo-panel"]:not(:has([aria-expanded="true"])) [class*="title"] {
-        font-size: 11px !important;
-        font-weight: 500 !important;
-        line-height: 20px !important;
-        color: var(--dsw-alias-label-secondary, #a1a1aa) !important;
-      }
-
-      section[data-testid="todo-panel"]:not(:has([aria-expanded="true"])) [class*="progress"] {
-        font-size: 11px !important;
-        line-height: 20px !important;
-        color: var(--dsw-alias-label-tertiary, #71717a) !important;
-      }
-
-      section[data-testid="todo-panel"]:has([aria-expanded="true"]) {
-        background: var(--dsw-alias-bg-base, #111) !important;
-        border-color: var(--dsw-alias-border-l2, rgba(255, 255, 255, 0.12)) !important;
+        border-bottom: none !important;
       }
 
       /* 5. MÉTRICAS INFERIORES DISCRETAS */
