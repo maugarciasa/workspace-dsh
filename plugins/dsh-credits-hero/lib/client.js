@@ -35,6 +35,22 @@ window.__ModuleLoader__.load({
       return undefined;
     }
 
+    
+    const HISTORY_STORAGE = "dsh-credits-hero-history";
+    function loadHistory() {
+      try {
+        const raw = localStorage.getItem(HISTORY_STORAGE);
+        return raw ? JSON.parse(raw) : {};
+      } catch {
+        return {};
+      }
+    }
+    function saveHistory(hist) {
+      try {
+        localStorage.setItem(HISTORY_STORAGE, JSON.stringify(hist));
+      } catch {}
+    }
+
     function formatReset(epochMs, now) {
       if (!epochMs || typeof epochMs !== "number") return "";
       const diffMs = epochMs - now;
@@ -76,6 +92,8 @@ window.__ModuleLoader__.load({
       const accounts = provider && Array.isArray(provider.accounts) ? provider.accounts : [];
       if (accounts.length === 0) return [];
       const now = Date.now();
+      const history = loadHistory();
+      const updatedHistory = { ...history };
       const settled = await Promise.allSettled(accounts.map(async (account) => {
         const payload = { provider: PROVIDER, account: account.key };
         if (force === true) payload.force = true;
@@ -113,13 +131,37 @@ window.__ModuleLoader__.load({
 
         let statusText = "";
         let blockerReset = undefined;
+        let isResetNow = false;
+
+        const prevRecord = history[account.key];
+
         if (weeklyCapped) {
           statusText = weeklyReset ? "Libera " + formatReset(weeklyReset, now) : "Esgotado";
           blockerReset = weeklyReset;
         } else if (sessionCapped) {
           statusText = sessionReset ? "Libera " + formatReset(sessionReset, now) : "Limite 5h";
           blockerReset = sessionReset;
+        } else {
+          // Conta disponível: verificar evidência real de desbloqueio recente
+          if (prevRecord) {
+            const wasCapped = prevRecord.capped === true;
+            const resetExpired = prevRecord.blockerReset && prevRecord.blockerReset <= now && (now - prevRecord.blockerReset < 3 * 3600 * 1000);
+            if (wasCapped || resetExpired) {
+              // Se estava bloqueada e agora está livre (ou o reset passou recentemente há menos de 3h)
+              isResetNow = true;
+              statusText = "Resetado agora";
+            }
+          }
         }
+
+        updatedHistory[account.key] = {
+          capped: !available,
+          blockerReset: blockerReset || (prevRecord && prevRecord.blockerReset > now ? prevRecord.blockerReset : undefined),
+          lastSeen: now,
+          isResetNow: isResetNow,
+          sessionRem: sessionPct !== undefined ? 100 - sessionPct : 100,
+          weeklyRem: weeklyPct !== undefined ? 100 - weeklyPct : 100
+        };
 
         rows.push({
           key: account.key,
@@ -133,6 +175,7 @@ window.__ModuleLoader__.load({
           maxUsed: maxUsed,
           urgency: urgency,
           available: available,
+          isResetNow: isResetNow,
           sessionCapped: sessionCapped,
           weeklyCapped: weeklyCapped,
           statusText: statusText,
@@ -140,7 +183,15 @@ window.__ModuleLoader__.load({
         });
       }
 
+      saveHistory(updatedHistory);
+
       rows.sort((a, b) => {
+        // Prioridade 1: Contas disponíveis vêm antes de bloqueadas
+        if (a.available !== b.available) return a.available ? -1 : 1;
+        // Prioridade 1.1: Entre as disponíveis, contas recém-resetadas ganham destaque no topo
+        if (a.available && b.available) {
+          if (a.isResetNow !== b.isResetNow) return a.isResetNow ? -1 : 1;
+        }
         // 1. Contas disponíveis vêm antes de bloqueadas
         if (a.available !== b.available) return a.available ? -1 : 1;
         if (a.available) {
@@ -215,6 +266,8 @@ window.__ModuleLoader__.load({
     const rowNameStyle = { width: "125px", flexShrink: 0, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
     const badgeWrapStyle = { flex: "1 1 auto", display: "flex", justifyContent: "flex-end", paddingRight: "4px" };
     const badgeStyle = { fontSize: "10px", padding: "1px 5px", borderRadius: "4px", background: "rgba(248,81,73,.14)", color: "#f85149", border: "1px solid rgba(248,81,73,.22)", whiteSpace: "nowrap", fontWeight: 500, letterSpacing: "-0.01em" };
+    const badgeResetStyle = { fontSize: "10px", padding: "1px 5px", borderRadius: "4px", background: "rgba(56,189,248,.14)", color: "#38bdf8", border: "1px solid rgba(56,189,248,.25)", whiteSpace: "nowrap", fontWeight: 600, letterSpacing: "-0.01em" };
+    const highlightBannerStyle = { background: "rgba(56,189,248,.1)", border: "1px solid rgba(56,189,248,.22)", borderRadius: "6px", padding: "4px 8px", marginBottom: "8px", fontSize: "11px", color: "#38bdf8", display: "flex", alignItems: "center", gap: "6px", fontWeight: 500 };
     const rowNum5hStyle = { fontVariantNumeric: "tabular-nums", width: "48px", textAlign: "right", whiteSpace: "nowrap", fontWeight: 600, fontSize: "11.5px", flexShrink: 0 };
     const rowNumWeekStyle = { fontVariantNumeric: "tabular-nums", width: "52px", textAlign: "right", whiteSpace: "nowrap", fontWeight: 600, fontSize: "11.5px", flexShrink: 0 };
     const dividerStyle = { height: "1px", background: "rgba(127,127,127,.22)", margin: "8px 0 6px 0" };
@@ -251,13 +304,14 @@ window.__ModuleLoader__.load({
     // Amarelo: disponível, mas próxima de algum limite (algum valor <= 30%)
     // Verde: disponível normalmente (todos > 30%)
     function rowDotColor(row) {
-      if (!row.available || row.sessionCapped || row.weeklyCapped) return "#f85149";
+      if (!row.available || row.sessionCapped || row.weeklyCapped) return "#f85149"; // Vermelho: bloqueada
+      if (row.isResetNow) return "#38bdf8"; // Azul celeste com destaque: conta recém-resetada
       const sessionRem = row.session !== undefined ? (100 - Math.round(row.session)) : 100;
       const weeklyRem = row.weekly !== undefined ? (100 - Math.round(row.weekly)) : 100;
       const minRem = Math.min(sessionRem, weeklyRem);
-      if (minRem < 10) return "#f85149";
-      if (minRem <= 30) return "#e3b341";
-      return "#3fb950";
+      if (minRem < 10) return "#f85149"; // Vermelho: crítico
+      if (minRem <= 30) return "#e3b341"; // Amarelo: atenção
+      return "#3fb950"; // Verde: saudável
     }
 
     function CreditsChip(props) {
@@ -293,13 +347,15 @@ window.__ModuleLoader__.load({
       const dotColor = rowDotColor(top);
 
       const availableCount = rows.filter((r) => r.available).length;
-      const todayUnlockCount = rows.filter((r) => r.sessionCapped && !r.weeklyCapped).length;
+      const resetCount = rows.filter((r) => r.available && r.isResetNow).length;
       const weeklyCappedCount = rows.filter((r) => r.weeklyCapped).length;
+      const sessionCappedCount = rows.filter((r) => r.sessionCapped && !r.weeklyCapped).length;
 
       const summaryParts = [];
       if (availableCount > 0) summaryParts.push(availableCount + " disponível" + (availableCount > 1 ? "eis" : ""));
-      if (todayUnlockCount > 0) summaryParts.push(todayUnlockCount + " liberam hoje");
+      if (resetCount > 0) summaryParts.push(resetCount + " recém-resetada" + (resetCount > 1 ? "s" : ""));
       if (weeklyCappedCount > 0) summaryParts.push(weeklyCappedCount + " no limite semanal");
+      if (sessionCappedCount > 0) summaryParts.push(sessionCappedCount + " no limite de 5h");
       const summaryText = summaryParts.join(" · ") || "todas as contas no limite";
 
       const topSessionRem = remPct(top.session);
@@ -322,6 +378,13 @@ window.__ModuleLoader__.load({
           style: panelStyle,
           onClick: (e) => e.stopPropagation()
         }, [
+          resetCount > 0 ? h("div", {
+            key: "banner",
+            style: highlightBannerStyle
+          }, [
+            h("span", { key: "bicon" }, "⚡"),
+            h("span", { key: "btxt" }, resetCount === 1 ? "1 conta liberada após reset" : resetCount + " contas liberadas após reset")
+          ]) : null,
           h("div", {
             key: "head",
             style: headerRowStyle,
@@ -366,7 +429,7 @@ window.__ModuleLoader__.load({
                 shortName(row.label, row.key)
               ]),
               h("div", { key: "wrap", style: badgeWrapStyle }, [
-                row.statusText ? h("span", { key: "b", style: badgeStyle }, row.statusText) : null
+                row.statusText ? h("span", { key: "b", style: row.isResetNow ? badgeResetStyle : badgeStyle }, row.statusText) : null
               ]),
               h("span", {
                 key: "s",
