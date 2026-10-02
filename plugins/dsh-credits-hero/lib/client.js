@@ -114,10 +114,10 @@ window.__ModuleLoader__.load({
         let statusText = "";
         let blockerReset = undefined;
         if (weeklyCapped) {
-          statusText = "Sem crédito semanal" + (weeklyReset ? " · libera " + formatReset(weeklyReset, now) : "");
+          statusText = weeklyReset ? "Libera " + formatReset(weeklyReset, now) : "Esgotado";
           blockerReset = weeklyReset;
         } else if (sessionCapped) {
-          statusText = "Limite 5h atingido" + (sessionReset ? " · libera " + formatReset(sessionReset, now) : "");
+          statusText = sessionReset ? "Libera " + formatReset(sessionReset, now) : "Limite 5h";
           blockerReset = sessionReset;
         }
 
@@ -141,8 +141,22 @@ window.__ModuleLoader__.load({
       }
 
       rows.sort((a, b) => {
+        // 1. Contas disponíveis vêm antes de bloqueadas
         if (a.available !== b.available) return a.available ? -1 : 1;
-        if (a.available) return b.urgency - a.urgency;
+        if (a.available) {
+          // Ordenar por menor gargalo disponível: quanto maior a sobra mínima, mais capacidade tem
+          const aMinRem = Math.min(
+            a.session !== undefined ? (100 - a.session) : 100,
+            a.weekly !== undefined ? (100 - a.weekly) : 100
+          );
+          const bMinRem = Math.min(
+            b.session !== undefined ? (100 - b.session) : 100,
+            b.weekly !== undefined ? (100 - b.weekly) : 100
+          );
+          if (bMinRem !== aMinRem) return bMinRem - aMinRem;
+          return (b.urgency || 0) - (a.urgency || 0);
+        }
+        // Para bloqueadas: priorizar desbloqueio semanal mais cedo
         if (a.weeklyCapped !== b.weeklyCapped) return a.weeklyCapped ? 1 : -1;
         return (a.blockerReset || 0) - (b.blockerReset || 0);
       });
@@ -173,7 +187,7 @@ window.__ModuleLoader__.load({
       top: "32px",
       left: 0,
       zIndex: 400,
-      minWidth: "410px",
+      minWidth: "375px",
       padding: "10px 14px",
       border: "1px solid rgba(127,127,127,.35)",
       borderRadius: "10px",
@@ -186,22 +200,22 @@ window.__ModuleLoader__.load({
     };
     const headerRowStyle = {
       display: "flex",
-      gap: "10px",
+      gap: "8px",
       alignItems: "center",
-      paddingBottom: "5px",
-      marginBottom: "3px",
+      paddingBottom: "6px",
+      marginBottom: "4px",
       borderBottom: "1px solid rgba(127,127,127,.18)",
       fontSize: "10.5px",
       fontWeight: 600,
-      textTransform: "uppercase",
-      letterSpacing: "0.03em",
-      color: "var(--dsw-alias-label-tertiary, #8b949e)"
+      letterSpacing: "0.04em",
+      color: "var(--dsw-alias-label-tertiary, #8b949e)",
+      cursor: "help"
     };
-    const rowStyle = { display: "flex", gap: "10px", alignItems: "center", padding: "3px 0" };
+    const rowStyle = { display: "flex", gap: "8px", alignItems: "center", padding: "3px 0" };
     const rowNameWrap = { flex: "1 1 auto", display: "inline-flex", alignItems: "center", gap: "6px", overflow: "hidden" };
     const rowNameStyle = { fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
-    const badgeStyle = { fontSize: "10px", padding: "1px 6px", borderRadius: "4px", background: "rgba(248,81,73,.15)", color: "#f85149", border: "1px solid rgba(248,81,73,.25)", whiteSpace: "nowrap", fontWeight: 500 };
-    const rowNumStyle = { fontVariantNumeric: "tabular-nums", minWidth: "62px", textAlign: "right", whiteSpace: "nowrap", fontWeight: 600 };
+    const badgeStyle = { fontSize: "10.5px", padding: "1px 6px", borderRadius: "4px", background: "rgba(248,81,73,.14)", color: "#f85149", border: "1px solid rgba(248,81,73,.22)", whiteSpace: "nowrap", fontWeight: 500 };
+    const rowNumStyle = { fontVariantNumeric: "tabular-nums", minWidth: "52px", textAlign: "right", whiteSpace: "nowrap", fontWeight: 600, fontSize: "11.5px" };
     const dividerStyle = { height: "1px", background: "rgba(127,127,127,.22)", margin: "8px 0 6px 0" };
     const footerStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "11px", opacity: 0.85, paddingTop: "2px" };
     const refreshBtnStyle = { background: "none", border: "none", color: "inherit", cursor: "pointer", opacity: 0.85, padding: "2px 4px", fontSize: "11px", textDecoration: "underline" };
@@ -212,20 +226,26 @@ window.__ModuleLoader__.load({
       return remaining + "%";
     }
 
+    // Regra exata: Verde > 30% | Amarelo 10% a 30% | Vermelho < 10%
     function remColor(usedValue) {
       if (usedValue === undefined) return "inherit";
-      const remaining = 100 - usedValue;
-      if (remaining <= 5) return "#f85149"; // Vermelho: esgotado ou quase
-      if (remaining <= 35) return "#e3b341"; // Amarelo: limite intermediário / baixo
-      return "#3fb950"; // Verde: bastante limite restante
+      const remaining = 100 - Math.round(usedValue);
+      if (remaining < 10) return "#f85149"; // Vermelho: abaixo de 10%
+      if (remaining <= 30) return "#e3b341"; // Amarelo: entre 10% e 30%
+      return "#3fb950"; // Verde: acima de 30%
     }
 
+    // Indicador geral da conta à esquerda:
+    // Vermelho: indisponível (algum limite foi atingido)
+    // Amarelo: disponível, mas próxima de algum limite (algum valor <= 30%)
+    // Verde: disponível normalmente (todos > 30%)
     function rowDotColor(row) {
-      if (row.weeklyCapped) return "#f85149";
-      if (row.sessionCapped) return "#db6d28";
-      const minRemaining = 100 - row.maxUsed;
-      if (minRemaining <= 5) return "#f85149";
-      if (minRemaining <= 35) return "#e3b341";
+      if (!row.available || row.sessionCapped || row.weeklyCapped) return "#f85149";
+      const sessionRem = row.session !== undefined ? (100 - Math.round(row.session)) : 100;
+      const weeklyRem = row.weekly !== undefined ? (100 - Math.round(row.weekly)) : 100;
+      const minRem = Math.min(sessionRem, weeklyRem);
+      if (minRem < 10) return "#f85149";
+      if (minRem <= 30) return "#e3b341";
       return "#3fb950";
     }
 
@@ -286,11 +306,15 @@ window.__ModuleLoader__.load({
           style: panelStyle,
           onClick: (e) => e.stopPropagation()
         }, [
-          h("div", { key: "head", style: headerRowStyle }, [
+          h("div", {
+            key: "head",
+            style: headerRowStyle,
+            title: "Os percentuais representam o limite ainda disponível."
+          }, [
             h("span", { key: "hdot", style: { width: "7px", opacity: 0 } }),
-            h("span", { key: "hn", style: { flex: "1 1 auto" } }, "Conta (% = limite disponível)"),
-            h("span", { key: "hs", style: { minWidth: "62px", textAlign: "right" } }, "5 Horas"),
-            h("span", { key: "hw", style: { minWidth: "62px", textAlign: "right" } }, "Semanal")
+            h("span", { key: "hn", style: { flex: "1 1 auto" } }, "CONTA"),
+            h("span", { key: "hs", style: { minWidth: "52px", textAlign: "right" } }, "5H"),
+            h("span", { key: "hw", style: { minWidth: "52px", textAlign: "right" } }, "SEMANA")
           ]),
           h("div", { key: "rows" }, rows.map((row) => {
             const sRem = remPct(row.session);
