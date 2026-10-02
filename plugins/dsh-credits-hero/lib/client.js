@@ -286,7 +286,7 @@ window.__ModuleLoader__.load({
       const weeklyCappedCount = rows.filter((r) => r.weeklyCapped).length;
 
       const summaryParts = [];
-      if (availableCount > 0) summaryParts.push(availableCount + " ativa" + (availableCount > 1 ? "s" : ""));
+      if (availableCount > 0) summaryParts.push(availableCount + " disponível" + (availableCount > 1 ? "eis" : ""));
       if (todayUnlockCount > 0) summaryParts.push(todayUnlockCount + " liberam hoje");
       if (weeklyCappedCount > 0) summaryParts.push(weeklyCappedCount + " no limite semanal");
       const summaryText = summaryParts.join(" · ") || "todas as contas no limite";
@@ -295,7 +295,11 @@ window.__ModuleLoader__.load({
       const topWeeklyRem = remPct(top.weekly);
       const children = [
         h("span", { key: "dot", style: Object.assign({}, dotStyle, { background: dotColor }) }),
-        h("span", { key: "name", style: nameStyle }, (top.isDefault ? "★ " : "") + shortName(top.label, top.key)),
+        h("span", {
+          key: "name",
+          style: nameStyle,
+          title: top.available ? "Melhor conta disponível no momento" : (top.label || top.key)
+        }, (top.available ? "★ " : "") + shortName(top.label, top.key)),
         h("span", { key: "s", style: Object.assign({}, dimStyle, { color: remColor(top.session) }), title: "Limite de 5h restante: " + topSessionRem }, "5h " + topSessionRem + " disp."),
         h("span", { key: "w", style: Object.assign({}, dimStyle, { color: remColor(top.weekly) }), title: "Limite semanal restante: " + topWeeklyRem }, "Semana " + topWeeklyRem + " disp.")
       ];
@@ -316,29 +320,46 @@ window.__ModuleLoader__.load({
             h("span", { key: "hs", style: { minWidth: "52px", textAlign: "right" } }, "5H"),
             h("span", { key: "hw", style: { minWidth: "52px", textAlign: "right" } }, "SEMANA")
           ]),
-          h("div", { key: "rows" }, rows.map((row) => {
+          h("div", { key: "rows" }, rows.map((row, idx) => {
             const sRem = remPct(row.session);
             const wRem = remPct(row.weekly);
             const sColor = remColor(row.session);
             const wColor = remColor(row.weekly);
+            const sVal = row.session !== undefined ? (100 - Math.round(row.session)) : 100;
+            const wVal = row.weekly !== undefined ? (100 - Math.round(row.weekly)) : 100;
+
+            const isBestAccount = idx === 0 && row.available;
+            const starTitle = isBestAccount ? "Melhor conta disponível no momento" : "";
+
+            const sTooltip = sVal < 10
+              ? "Crítico · " + sRem + " do limite de 5h disponível" + (row.sessionReset ? " (libera " + formatReset(row.sessionReset, Date.now()) + ")" : "")
+              : "Janela 5h: " + sRem + " disponível" + (row.sessionReset ? " (libera " + formatReset(row.sessionReset, Date.now()) + ")" : "");
+
+            const wTooltip = wVal < 10
+              ? "Crítico · " + wRem + " do limite semanal disponível" + (row.weeklyReset ? " (libera " + formatReset(row.weeklyReset, Date.now()) + ")" : "")
+              : "Janela semanal: " + wRem + " disponível" + (row.weeklyReset ? " (libera " + formatReset(row.weeklyReset, Date.now()) + ")" : "");
+
             return h("div", {
               key: row.key,
               style: rowStyle
             }, [
               h("span", { key: "dot", style: Object.assign({}, dotStyle, { background: rowDotColor(row) }) }),
               h("div", { key: "wrap", style: rowNameWrap }, [
-                h("span", { key: "n", style: rowNameStyle, title: row.label || row.key }, (row.isDefault ? "★ " : "") + shortName(row.label, row.key)),
+                isBestAccount
+                  ? h("span", { key: "star", style: { color: "#e3b341", fontWeight: 700, cursor: "help" }, title: starTitle }, "★ ")
+                  : null,
+                h("span", { key: "n", style: rowNameStyle, title: row.label || row.key }, shortName(row.label, row.key)),
                 row.statusText ? h("span", { key: "b", style: badgeStyle }, row.statusText) : null
               ]),
               h("span", {
                 key: "s",
-                style: Object.assign({}, rowNumStyle, { color: sColor }),
-                title: "Janela 5h: " + sRem + " disponível" + (row.sessionReset ? " (libera " + formatReset(row.sessionReset, Date.now()) + ")" : "")
+                style: Object.assign({}, rowNumStyle, { color: sColor, cursor: sVal < 10 ? "help" : "inherit" }),
+                title: sTooltip
               }, sRem),
               h("span", {
                 key: "w",
-                style: Object.assign({}, rowNumStyle, { color: wColor }),
-                title: "Janela semanal: " + wRem + " disponível" + (row.weeklyReset ? " (libera " + formatReset(row.weeklyReset, Date.now()) + ")" : "")
+                style: Object.assign({}, rowNumStyle, { color: wColor, cursor: wVal < 10 ? "help" : "inherit" }),
+                title: wTooltip
               }, wRem)
             ]);
           })),
