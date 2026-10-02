@@ -1,6 +1,6 @@
 {
   "skill": "workspace-dsh",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Testes e benchmarks de avaliação de orquestração para o Workspace DSH",
   "evals": [
     {
