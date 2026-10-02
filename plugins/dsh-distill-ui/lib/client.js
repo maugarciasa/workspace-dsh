@@ -4,7 +4,7 @@ window.__ModuleLoader__.load({
     var module = { exports: {} };
     var exports = module.exports;
 
-    console.log("[dsh-distill-ui] v1.2.0 - Ultimate Distilled Experience Active");
+    console.log("[dsh-distill-ui] v1.3.0 - Unified Intermediate Batching Active");
 
     const CSS_STYLES = `
       /* ==========================================================================
@@ -743,11 +743,16 @@ window.__ModuleLoader__.load({
     function hasAssistantReplyContent(el) {
       if (!el || el.nodeType !== 1) return false;
 
-      if (el.querySelector("article, .markdown, [class*='markdown'], [class*='MarkdownText']")) {
-        return true;
+      // Se for apenas uma caixa de pensamento isolada (ou conter apenas tags de pensamento)
+      const thinkEl = el.getAttribute("data-variant") === "think" ? el : el.querySelector('[data-variant="think"]');
+      const articleEl = el.querySelector("article, .markdown, [class*='markdown'], [class*='MarkdownText']");
+
+      if (articleEl) {
+        const text = (articleEl.textContent || "").trim();
+        const thinkText = thinkEl ? (thinkEl.textContent || "").trim() : "";
+        if (text.length - thinkText.length > 25) return true;
       }
 
-      const thinkEl = el.querySelector('[data-variant="think"]');
       const richElements = el.querySelectorAll("h1, h2, h3, h4, h5, h6, pre, table, blockquote, ul, ol");
       for (const re of richElements) {
         if (!thinkEl || !thinkEl.contains(re)) return true;
@@ -756,14 +761,17 @@ window.__ModuleLoader__.load({
       if (thinkEl) {
         const totalText = (el.textContent || "").trim();
         const thinkText = (thinkEl.textContent || "").trim();
-        if (totalText.length - thinkText.length > 35) {
+        // Se a diferença entre o texto total e o texto do raciocínio for pequena, é apenas raciocínio/pensamento
+        if (totalText.length - thinkText.length > 40) {
           return true;
         }
         return false;
       }
 
       const text = (el.textContent || "").trim();
-      return text.length > 10;
+      // Não considerar pequenos rótulos de status como texto de resposta real
+      if (text.toLowerCase() === "raciocínio" || text.toLowerCase() === "thinking") return false;
+      return text.length > 25;
     }
 
     function isContextInjection(child) {
@@ -834,9 +842,24 @@ window.__ModuleLoader__.load({
 
     function isPureReasoning(child) {
       if (!child || child.nodeType !== 1) return false;
-      const thinkEl = child.getAttribute("data-variant") === "think" ? child : child.querySelector?.('[data-variant="think"]');
-      if (!thinkEl) return false;
-      return !hasAssistantReplyContent(child);
+      const flowKind = child.getAttribute("data-chat-flow-kind");
+      if (flowKind === "user" || flowKind === "turn-tail" || flowKind === "turn-process") return false;
+
+      if (child.getAttribute("data-variant") === "think" || child.hasAttribute("data-thinking")) return true;
+      const thinkEl = child.querySelector?.('[data-variant="think"], [data-thinking], [class*="thought"], [class*="Thought"], [class*="reasoning"], [class*="Reasoning"]');
+      if (thinkEl) {
+        return !hasAssistantReplyContent(child);
+      }
+
+      // Detectar caixas de raciocínio colapsáveis nativas
+      const row = child.querySelector?.('[data-disclosure-row="true"]');
+      if (row) {
+        const text = (row.textContent || "").trim().toLowerCase();
+        if (text === "raciocínio" || text === "pensamento" || text.startsWith("raciocínio") || text === "thinking") {
+          return !hasAssistantReplyContent(child);
+        }
+      }
+      return false;
     }
 
     function isGenuineToolCall(child, isSubcallsContainer) {
@@ -954,7 +977,7 @@ window.__ModuleLoader__.load({
           const info = getEffectiveItemInfo(child, isSubcallsContainer);
           currentRun.push({ el: child, tool: info.tool, cat: info.cat });
         } else {
-          if (currentRun.length >= 2) runs.push(currentRun);
+          if (currentRun.length >= 1) runs.push(currentRun);
           currentRun = [];
 
           if (child.hasAttribute("data-distill-batch-id")) {
@@ -965,11 +988,11 @@ window.__ModuleLoader__.load({
           }
         }
       }
-      if (currentRun.length >= 2) runs.push(currentRun);
+      if (currentRun.length >= 1) runs.push(currentRun);
 
       const validBatchIds = new Set();
       for (const run of runs) {
-        if (run.length >= 2) {
+        if (run.length >= 1) {
           const firstItem = run[0].el;
           const firstKey = firstItem.getAttribute("data-chat-anchor-key") ||
                            firstItem.getAttribute("data-chat-call-id") ||
@@ -987,7 +1010,7 @@ window.__ModuleLoader__.load({
       }
 
       for (const run of runs) {
-        if (run.length < 2) continue;
+        if (run.length < 1) continue;
 
         const firstItem = run[0].el;
         const firstKey = firstItem.getAttribute("data-chat-anchor-key") ||
