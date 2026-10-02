@@ -11,7 +11,23 @@ Compatível com **DeepSeek Harness (DSH)**, **Claude Code**, **Cursor**, **Codex
 
 ---
 
-## 🚀 Instalação Rápida da Skill (Qualquer SO)
+## ⚡ Instalação One-Liner em 1 Comando (Novo Computador)
+
+Para configurar sua máquina do zero (clonar skill, criar links simbólicos e provisionar plugins):
+
+### 🪟 No Windows (PowerShell):
+```powershell
+irm https://raw.githubusercontent.com/maugarciasa/workspace-dsh/main/install.ps1 | iex
+```
+
+### 🐧 No Linux / 🍎 macOS / WSL (Terminal):
+```bash
+curl -fsSL https://raw.githubusercontent.com/maugarciasa/workspace-dsh/main/install.sh | bash
+```
+
+---
+
+## 🚀 Instalação Alternativa (Gerenciador Oficial / Manual)
 
 ### 1. Via Gerenciador Oficial de Skills (Recomendado)
 Funciona de forma idêntica no **Linux**, **macOS** e **Windows**:
@@ -111,6 +127,8 @@ Veja o guia detalhado em [`references/dsh-plugins.md`](references/dsh-plugins.md
 workspace-dsh/
 ├── SKILL.md                          # Ponto de entrada oficial da skill
 ├── README.md                         # Documentação completa e instruções de uso
+├── install.ps1                       # Instalador One-Liner para Windows
+├── install.sh                        # Instalador One-Liner para Linux/macOS                         # Documentação completa e instruções de uso
 ├── LICENSE                           # Licença permissiva MIT
 ├── evals/
 │   └── evals.json                    # Cenários de teste e avaliação oficial de skills
