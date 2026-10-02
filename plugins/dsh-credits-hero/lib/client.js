@@ -114,10 +114,10 @@ window.__ModuleLoader__.load({
         let statusText = "";
         let blockerReset = undefined;
         if (weeklyCapped) {
-          statusText = "teto sem" + (weeklyReset ? " · " + formatReset(weeklyReset, now) : "");
+          statusText = "Sem crédito semanal" + (weeklyReset ? " · libera " + formatReset(weeklyReset, now) : "");
           blockerReset = weeklyReset;
         } else if (sessionCapped) {
-          statusText = "teto 5h" + (sessionReset ? " · " + formatReset(sessionReset, now) : "");
+          statusText = "Limite 5h atingido" + (sessionReset ? " · libera " + formatReset(sessionReset, now) : "");
           blockerReset = sessionReset;
         }
 
@@ -173,34 +173,59 @@ window.__ModuleLoader__.load({
       top: "32px",
       left: 0,
       zIndex: 400,
-      minWidth: "370px",
+      minWidth: "410px",
       padding: "10px 14px",
       border: "1px solid rgba(127,127,127,.35)",
       borderRadius: "10px",
       background: "var(--dsw-alias-surface-overlay, #1c1c1f)",
       color: "var(--dsw-alias-label-primary, #e6edf3)",
-      boxShadow: "0 12px 32px rgba(0,0,0,.45)",
+      boxShadow: "0 14px 36px rgba(0,0,0,.55)",
       fontSize: "12px",
-      lineHeight: 1.65,
+      lineHeight: 1.6,
       fontWeight: 400
     };
-    const rowStyle = { display: "flex", gap: "10px", alignItems: "center", padding: "2px 0" };
+    const headerRowStyle = {
+      display: "flex",
+      gap: "10px",
+      alignItems: "center",
+      paddingBottom: "5px",
+      marginBottom: "3px",
+      borderBottom: "1px solid rgba(127,127,127,.18)",
+      fontSize: "10.5px",
+      fontWeight: 600,
+      textTransform: "uppercase",
+      letterSpacing: "0.03em",
+      color: "var(--dsw-alias-label-tertiary, #8b949e)"
+    };
+    const rowStyle = { display: "flex", gap: "10px", alignItems: "center", padding: "3px 0" };
     const rowNameWrap = { flex: "1 1 auto", display: "inline-flex", alignItems: "center", gap: "6px", overflow: "hidden" };
     const rowNameStyle = { fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
-    const badgeStyle = { fontSize: "10px", opacity: 0.8, padding: "1px 5px", borderRadius: "4px", background: "rgba(127,127,127,.18)", whiteSpace: "nowrap" };
-    const rowNumStyle = { fontVariantNumeric: "tabular-nums", opacity: 0.88, minWidth: "50px", textAlign: "right", whiteSpace: "nowrap" };
+    const badgeStyle = { fontSize: "10px", padding: "1px 6px", borderRadius: "4px", background: "rgba(248,81,73,.15)", color: "#f85149", border: "1px solid rgba(248,81,73,.25)", whiteSpace: "nowrap", fontWeight: 500 };
+    const rowNumStyle = { fontVariantNumeric: "tabular-nums", minWidth: "62px", textAlign: "right", whiteSpace: "nowrap", fontWeight: 600 };
     const dividerStyle = { height: "1px", background: "rgba(127,127,127,.22)", margin: "8px 0 6px 0" };
-    const footerStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "11px", opacity: 0.8, paddingTop: "2px" };
+    const footerStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "11px", opacity: 0.85, paddingTop: "2px" };
     const refreshBtnStyle = { background: "none", border: "none", color: "inherit", cursor: "pointer", opacity: 0.85, padding: "2px 4px", fontSize: "11px", textDecoration: "underline" };
 
-    function pct(value) {
-      return value === undefined ? "-" : Math.round(value) + "%";
+    function remPct(usedValue) {
+      if (usedValue === undefined) return "-";
+      const remaining = Math.max(0, Math.min(100, 100 - Math.round(usedValue)));
+      return remaining + "%";
+    }
+
+    function remColor(usedValue) {
+      if (usedValue === undefined) return "inherit";
+      const remaining = 100 - usedValue;
+      if (remaining <= 5) return "#f85149"; // Vermelho: esgotado ou quase
+      if (remaining <= 35) return "#e3b341"; // Amarelo: limite intermediário / baixo
+      return "#3fb950"; // Verde: bastante limite restante
     }
 
     function rowDotColor(row) {
       if (row.weeklyCapped) return "#f85149";
       if (row.sessionCapped) return "#db6d28";
-      if (row.maxUsed >= 80) return "#d29922";
+      const minRemaining = 100 - row.maxUsed;
+      if (minRemaining <= 5) return "#f85149";
+      if (minRemaining <= 35) return "#e3b341";
       return "#3fb950";
     }
 
@@ -243,14 +268,16 @@ window.__ModuleLoader__.load({
       const summaryParts = [];
       if (availableCount > 0) summaryParts.push(availableCount + " ativa" + (availableCount > 1 ? "s" : ""));
       if (todayUnlockCount > 0) summaryParts.push(todayUnlockCount + " liberam hoje");
-      if (weeklyCappedCount > 0) summaryParts.push(weeklyCappedCount + " no teto sem.");
-      const summaryText = summaryParts.join(" · ") || "todas as contas no teto";
+      if (weeklyCappedCount > 0) summaryParts.push(weeklyCappedCount + " no limite semanal");
+      const summaryText = summaryParts.join(" · ") || "todas as contas no limite";
 
+      const topSessionRem = remPct(top.session);
+      const topWeeklyRem = remPct(top.weekly);
       const children = [
         h("span", { key: "dot", style: Object.assign({}, dotStyle, { background: dotColor }) }),
         h("span", { key: "name", style: nameStyle }, (top.isDefault ? "★ " : "") + shortName(top.label, top.key)),
-        h("span", { key: "s", style: dimStyle }, "5h " + pct(top.session)),
-        h("span", { key: "w", style: dimStyle }, "sem " + pct(top.weekly))
+        h("span", { key: "s", style: Object.assign({}, dimStyle, { color: remColor(top.session) }), title: "Limite de 5h restante: " + topSessionRem }, "5h " + topSessionRem + " disp."),
+        h("span", { key: "w", style: Object.assign({}, dimStyle, { color: remColor(top.weekly) }), title: "Limite semanal restante: " + topWeeklyRem }, "Semana " + topWeeklyRem + " disp.")
       ];
 
       if (open) {
@@ -259,18 +286,38 @@ window.__ModuleLoader__.load({
           style: panelStyle,
           onClick: (e) => e.stopPropagation()
         }, [
-          h("div", { key: "rows" }, rows.map((row) => h("div", {
-            key: row.key,
-            style: rowStyle
-          }, [
-            h("span", { key: "dot", style: Object.assign({}, dotStyle, { background: rowDotColor(row) }) }),
-            h("div", { key: "wrap", style: rowNameWrap }, [
-              h("span", { key: "n", style: rowNameStyle, title: row.label || row.key }, (row.isDefault ? "★ " : "") + shortName(row.label, row.key)),
-              row.statusText ? h("span", { key: "b", style: badgeStyle }, row.statusText) : null
-            ]),
-            h("span", { key: "s", style: rowNumStyle, title: row.sessionReset ? "Reset 5h: " + formatReset(row.sessionReset, Date.now()) : "" }, "5h " + pct(row.session)),
-            h("span", { key: "w", style: rowNumStyle, title: row.weeklyReset ? "Reset semanal: " + formatReset(row.weeklyReset, Date.now()) : "" }, "sem " + pct(row.weekly))
-          ]))),
+          h("div", { key: "head", style: headerRowStyle }, [
+            h("span", { key: "hdot", style: { width: "7px", opacity: 0 } }),
+            h("span", { key: "hn", style: { flex: "1 1 auto" } }, "Conta (% = limite disponível)"),
+            h("span", { key: "hs", style: { minWidth: "62px", textAlign: "right" } }, "5 Horas"),
+            h("span", { key: "hw", style: { minWidth: "62px", textAlign: "right" } }, "Semanal")
+          ]),
+          h("div", { key: "rows" }, rows.map((row) => {
+            const sRem = remPct(row.session);
+            const wRem = remPct(row.weekly);
+            const sColor = remColor(row.session);
+            const wColor = remColor(row.weekly);
+            return h("div", {
+              key: row.key,
+              style: rowStyle
+            }, [
+              h("span", { key: "dot", style: Object.assign({}, dotStyle, { background: rowDotColor(row) }) }),
+              h("div", { key: "wrap", style: rowNameWrap }, [
+                h("span", { key: "n", style: rowNameStyle, title: row.label || row.key }, (row.isDefault ? "★ " : "") + shortName(row.label, row.key)),
+                row.statusText ? h("span", { key: "b", style: badgeStyle }, row.statusText) : null
+              ]),
+              h("span", {
+                key: "s",
+                style: Object.assign({}, rowNumStyle, { color: sColor }),
+                title: "Janela 5h: " + sRem + " disponível" + (row.sessionReset ? " (libera " + formatReset(row.sessionReset, Date.now()) + ")" : "")
+              }, sRem),
+              h("span", {
+                key: "w",
+                style: Object.assign({}, rowNumStyle, { color: wColor }),
+                title: "Janela semanal: " + wRem + " disponível" + (row.weeklyReset ? " (libera " + formatReset(row.weeklyReset, Date.now()) + ")" : "")
+              }, wRem)
+            ]);
+          })),
           h("div", { key: "div", style: dividerStyle }),
           h("div", { key: "foot", style: footerStyle }, [
             h("span", { key: "sum" }, summaryText),
