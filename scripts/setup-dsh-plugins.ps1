@@ -135,13 +135,26 @@ try {
   } elseif (Get-Command npm -ErrorAction SilentlyContinue) {
     npm install
   }
-  # Patch para dsh-better-sidebar: desativa workspaceFence por padrão quando o settings service não está montado no DSH (evita bloquear arquivos em %TEMP% ou fora do workspace)
-  $sidebarIndex = Join-Path $ProfileDir "node_modules\dsh-better-sidebar\lib\index.js"
-  if (Test-Path $sidebarIndex) {
-    (Get-Content $sidebarIndex -Raw).Replace(
-      'if (value === null || typeof value !== "object") return true;',
-      'if (value === null || typeof value !== "object") return false;'
-    ) | Set-Content -Path $sidebarIndex -Encoding utf8
+  # Patches pós-instalação para estabilidade e usabilidade
+  # 1. dsh-better-sidebar: fence seguro, sem auto-abertura da aba Tasks, sem interceptar links de preview e com loopback liberado
+  $sidebarFiles = @(
+    (Join-Path $ProfileDir "node_modules\dsh-better-sidebar\lib\index.js"),
+    (Join-Path $ProfileDir "node_modules\dsh-better-sidebar\lib\client.js"),
+    (Join-Path $ProfileDir "node_modules\dsh-better-sidebar\lib\client-registry.js")
+  )
+  foreach ($sf in $sidebarFiles) {
+    if (Test-Path $sf) {
+      $txt = Get-Content $sf -Raw
+      $txt = $txt.Replace('if (value === null || typeof value !== "object") return true;', 'if (value === null || typeof value !== "object") return false;')
+      $txt = $txt.Replace('autoOpenSubagent: true,', 'autoOpenSubagent: false,')
+      $txt = $txt.Replace('autoOpenJobs: true,', 'autoOpenJobs: false,')
+      $txt = $txt.Replace('browserInterceptLinks: true,', 'browserInterceptLinks: false,')
+      $txt = $txt.Replace('browserInterceptHttp: true,', 'browserInterceptHttp: false,')
+      $txt = $txt.Replace('browserAllowedLoopback: "",', 'browserAllowedLoopback: "localhost,127.0.0.1",')
+      $txt = $txt.Replace('const isTabEnabled = (id) => store.getPrefs().tabsEnabled[id] !== false;', 'const isTabEnabled = (id) => id !== "subagent" && store.getPrefs().tabsEnabled[id] !== false;')
+      $txt = [regex]::Replace($txt, 'function activateTasksPage\(ctx, sessionId, options\) \{[\s\S]*?if \(park\) column\?\.toggleExpanded\?\.\(\);\s*\}', 'function activateTasksPage(ctx, sessionId, options) { return; }')
+      Set-Content -Path $sf -Value $txt -Encoding utf8
+    }
   }
 
   Write-Host "Todos os plugins foram instalados com sucesso!" -ForegroundColor Green

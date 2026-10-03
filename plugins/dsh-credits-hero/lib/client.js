@@ -7,7 +7,7 @@ window.__ModuleLoader__.load({
     var module = { exports: {} };
     var exports = module.exports;
 
-    console.info("[dsh-credits-hero] v0.2.0 carregado (corte 100% + previsao de resets)");
+    console.info("[dsh-credits-hero] v0.2.1 carregado (modal fixo ao clicar/arrastar)");
 
     const React = require("react");
     const h = React.createElement;
@@ -247,7 +247,9 @@ window.__ModuleLoader__.load({
       boxShadow: "0 14px 36px rgba(0,0,0,.55)",
       fontSize: "12px",
       lineHeight: 1.6,
-      fontWeight: 400
+      fontWeight: 400,
+      cursor: "default",
+      userSelect: "text"
     };
     const headerRowStyle = {
       display: "flex",
@@ -262,7 +264,7 @@ window.__ModuleLoader__.load({
       color: "var(--dsw-alias-label-tertiary, #8b949e)",
       cursor: "help"
     };
-    const rowStyle = { display: "flex", gap: "8px", alignItems: "center", padding: "3px 0" };
+    const rowStyle = { display: "flex", gap: "8px", alignItems: "center", padding: "3px 4px", borderRadius: "5px", cursor: "pointer" };
     const rowNameStyle = { width: "125px", flexShrink: 0, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
     const badgeWrapStyle = { flex: "1 1 auto", display: "flex", justifyContent: "flex-end", paddingRight: "4px" };
     const badgeStyle = { fontSize: "10px", padding: "1px 5px", borderRadius: "4px", background: "rgba(248,81,73,.14)", color: "#f85149", border: "1px solid rgba(248,81,73,.22)", whiteSpace: "nowrap", fontWeight: 500, letterSpacing: "-0.01em" };
@@ -316,9 +318,30 @@ window.__ModuleLoader__.load({
 
     function CreditsChip(props) {
       const rpc = props.rpc;
+      const chipRef = React.useRef(null);
       const [state, setState] = React.useState({ phase: "loading", rows: [] });
       const [open, setOpen] = React.useState(false);
       const [refreshing, setRefreshing] = React.useState(false);
+
+      React.useEffect(() => {
+        if (!open) return;
+        const onPointerDown = (event) => {
+          if (chipRef.current && !chipRef.current.contains(event.target)) {
+            setOpen(false);
+          }
+        };
+        const onKeyDown = (event) => {
+          if (event.key === "Escape") {
+            setOpen(false);
+          }
+        };
+        document.addEventListener("pointerdown", onPointerDown);
+        document.addEventListener("keydown", onKeyDown);
+        return () => {
+          document.removeEventListener("pointerdown", onPointerDown);
+          document.removeEventListener("keydown", onKeyDown);
+        };
+      }, [open]);
 
       const refreshData = React.useCallback((force) => {
         if (!rpc) {
@@ -375,6 +398,7 @@ window.__ModuleLoader__.load({
       if (open) {
         children.push(h("span", {
           key: "panel",
+          "data-credits-panel": "true",
           style: panelStyle,
           onClick: (e) => e.stopPropagation()
         }, [
@@ -417,7 +441,16 @@ window.__ModuleLoader__.load({
 
             return h("div", {
               key: row.key,
-              style: rowStyle
+              style: rowStyle,
+              onClick: (e) => {
+                e.stopPropagation();
+                if (rpc && !refreshing) {
+                  callRpc(rpc, "setDefault", { provider: PROVIDER, account: row.key }).then(() => {
+                    refreshData(true);
+                  }).catch(() => {});
+                }
+              },
+              title: "Clique para ativar esta conta como padrão imediatamente"
             }, [
               h("span", { key: "dot", style: Object.assign({}, dotStyle, { background: rowDotColor(row) }) }),
               h("span", {
@@ -449,7 +482,10 @@ window.__ModuleLoader__.load({
             h("button", {
               key: "ref",
               style: refreshBtnStyle,
-              onClick: () => refreshData(true),
+              onClick: (e) => {
+                e.stopPropagation();
+                refreshData(true);
+              },
               disabled: refreshing
             }, refreshing ? "atualizando..." : "↻ atualizar")
           ])
@@ -457,12 +493,17 @@ window.__ModuleLoader__.load({
       }
 
       return h("span", {
+        ref: chipRef,
         style: chipStyle,
-        onMouseEnter: () => setOpen(true),
-        onMouseLeave: () => setOpen(false),
-        onClick: () => setOpen(!open),
+        onClick: (e) => {
+          if (e.target && e.target.closest && e.target.closest("[data-credits-panel]")) {
+            return;
+          }
+          setOpen((prev) => !prev);
+        },
         title: "Pool ChatGPT/Codex — conta ativa e cotas",
-        "aria-label": "Cota das contas ChatGPT/Codex"
+        "aria-label": "Cota das contas ChatGPT/Codex",
+        "aria-expanded": open
       }, children);
     }
 

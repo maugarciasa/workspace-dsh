@@ -8,7 +8,8 @@ mostra a cota das contas ChatGPT/Codex do `dsh-plugin-subscriptions` e destaca
 
 - `● conta · 5h 12% · sem 45%` — a conta no topo da fila do pool.
 - Cor do ponto: verde (<80% em toda janela), âmbar (>=80%), vermelho (>=95% = no teto).
-- Hover: painel com **todas as contas**, ★ na default, 5h/semanal e "(no teto)".
+- Clique: painel fixo com **todas as contas**, ★ na default, 5h/semanal e avisos de liberação (com fechamento fora ou Esc).
+- Clique em qualquer conta: define como conta padrão ativa na mesma hora (1-clique).
 - Atualiza a cada 5 min (mesmo TTL do cache de usage do plugin) e não renderiza
   nada se o RPC falhar — nunca deixa chip quebrado.
 

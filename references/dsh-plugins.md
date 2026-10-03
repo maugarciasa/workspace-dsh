@@ -38,14 +38,14 @@ mantenha a linha `0.19.x`; com DSH >= 0.1.7 o pino pode voltar para `^0.21.1`.
 ## 🔍 Detalhamento por Categoria
 
 ### 1. Roteamento de Modelos & Assinaturas
-- **`dsh-plugin-subscriptions`**: Conecta suas contas existentes no ChatGPT (GPT-4o, OpenAI o1, o3-mini, geração de imagens via `gpt-image-2`), Claude e Grok sem pagar APIs avulsas.
+- **`dsh-plugin-subscriptions`**: Conecta suas contas existentes no ChatGPT (GPT-4o, OpenAI o1, o3-mini, geração de imagens via `gpt-image-2`), Claude e Grok sem pagar APIs avulsas. Inclui failover transparente entre contas do ChatGPT (remoção de sticky em 429/usage limit, buffer de `block-start` e reavaliação imediata de janelas expiradas).
 - **`dsh-agy`**: Fornece acesso aos modelos Google Antigravity com suporte a rotação em caso de limite de cota (429) e gerenciamento de múltiplas contas Google.
 
 ### 2. Interface, Produtividade & Idioma
 - **`dsh-locale-pt-br`**: Deixa toda a interface do DSH em Português-BR nativo.
-- **`dsh-better-sidebar`**: Permite organizar conversas por projetos, fixar chats importantes e navegar com mais agilidade.
+- **`dsh-better-sidebar`**: Permite organizar conversas por projetos, fixar chats importantes e navegar com mais agilidade. Configurado sem abertura forçada de Tasks (`autoOpenSubagent: false`, `autoOpenJobs: false`), sem interceptar links de preview e com loopback liberado (`localhost,127.0.0.1`).
 - **`@linxin666/dsh-client-ui-skill-explorer`**: Adiciona o painel visual de skills na barra lateral esquerda, facilitando a gestão sem precisar de terminal.
-- **`dsh-distill-ui`** & **`dsh-credits-hero`**: Refinam a interface da home e do chat, agrupando ferramentas executadas para não poluir o histórico.
+- **`dsh-distill-ui`** & **`dsh-credits-hero`**: Refinam a interface da home e do chat. O `dsh-credits-hero` (v0.2.1) traz modal fixo (não fecha ao arrastar o mouse para atualizar ou selecionar), cálculo de resets e troca de conta ativa em 1 clique diretamente na lista.
 
 ### 3. Segurança & Controle de Versão
 - **`dsh-undo-savepoint`**: Salva um snapshot antes de qualquer alteração de configuração ou instalação de plugin. Permite reverter alterações com um clique ou ativar o modo de segurança (`undo_safe_mode`) se algo quebrar.

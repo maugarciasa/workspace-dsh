@@ -56,11 +56,18 @@ else
   exit 1
 fi
 
-# Patch para dsh-better-sidebar: desativa workspaceFence por padrão quando o settings service não está montado
-SIDEBAR_INDEX="${PROFILE_DIR}/node_modules/dsh-better-sidebar/lib/index.js"
-if [ -f "${SIDEBAR_INDEX}" ]; then
-  sed -i 's/if (value === null || typeof value !== "object") return true;/if (value === null || typeof value !== "object") return false;/g' "${SIDEBAR_INDEX}"
-fi
+# Patches para dsh-better-sidebar: fence seguro, sem auto-abertura de Tasks, sem interceptar links de preview e com loopback liberado
+for sf in "${PROFILE_DIR}/node_modules/dsh-better-sidebar/lib/index.js" "${PROFILE_DIR}/node_modules/dsh-better-sidebar/lib/client.js" "${PROFILE_DIR}/node_modules/dsh-better-sidebar/lib/client-registry.js"; do
+  if [ -f "${sf}" ]; then
+    sed -i 's/if (value === null || typeof value !== "object") return true;/if (value === null || typeof value !== "object") return false;/g' "${sf}"
+    sed -i 's/autoOpenSubagent: true,/autoOpenSubagent: false,/g' "${sf}"
+    sed -i 's/autoOpenJobs: true,/autoOpenJobs: false,/g' "${sf}"
+    sed -i 's/browserInterceptLinks: true,/browserInterceptLinks: false,/g' "${sf}"
+    sed -i 's/browserInterceptHttp: true,/browserInterceptHttp: false,/g' "${sf}"
+    sed -i 's/browserAllowedLoopback: "",/browserAllowedLoopback: "localhost,127.0.0.1",/g' "${sf}"
+    sed -i 's/const isTabEnabled = (id) => store.getPrefs().tabsEnabled[id] !== false;/const isTabEnabled = (id) => id !== "subagent" && store.getPrefs().tabsEnabled[id] !== false;/g' "${sf}"
+  fi
+done
 
 echo ""
 echo "==> Todos os plugins foram instalados com sucesso!"
