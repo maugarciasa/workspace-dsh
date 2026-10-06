@@ -1,11 +1,12 @@
-// Verificação de consistência das versões de plugin e do perfil alvo.
+// Verificação de consistência das versões de plugin, do perfil alvo e do
+// desgaste dos plugins locais contra o DSH instalado.
 //
 // O modo de falha que motivou este script: o pino do `dsh-better-sidebar` ficou
 // em `~0.19.1` enquanto o runtime do DSH avançou para 0.2.x. O plugin passou a ser
 // recusado pelo gate de peers do DSH e desabilitado no boot — mas nenhum teste
 // pegava isso, porque o CI só validava o frontmatter do SKILL.md.
 //
-// Tudo aqui é offline e determinístico: lê os scripts e a documentação do repo.
+// Tudo aqui é offline e determinístico: lê os scripts, os plugins e a doc do repo.
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
@@ -93,10 +94,28 @@ for (const [label, content] of [
   }
 }
 
+// Os overlays de terceiros com YAML inválido fazem o DSH pular o bundle inteiro.
+// O setup precisa conter o reparo, senão o plugin silenciosamente não carrega.
+for (const [label, content] of [
+  ["scripts/setup-dsh-plugins.ps1", psSetup],
+  ["scripts/setup-dsh-plugins.sh", shSetup],
+]) {
+  if (content.includes("Overlay corrigido")) {
+    pass(`${label} repara overlays com YAML inválido`);
+  } else {
+    fail(`${label} não repara overlays com YAML inválido (o DSH pula o bundle)`);
+  }
+  // Needles que não existem mais no 0.24.1 só geram aviso de no-op a cada execução.
+  for (const dead of ["browserInterceptLinks", "browserInterceptHttp", "browserAllowedLoopback"]) {
+    if (content.includes(`'${dead}`) || content.includes(`"${dead}`)) {
+      fail(`${label} ainda referencia '${dead}', removido do dsh-better-sidebar 0.21+`);
+    }
+  }
+}
+
 // `pwsh` (PowerShell 7) não existe em toda máquina Windows; chamá-lo direto
 // aborta o script com CommandNotFound.
-const shellUsers = ["install.ps1", "scripts/menu.ps1"];
-for (const rel of shellUsers) {
+for (const rel of ["install.ps1", "scripts/menu.ps1"]) {
   const content = read(rel);
   if (/^\s*(&|\.)?\s*pwsh\s+-File/m.test(content)) {
     fail(`${rel} invoca 'pwsh -File' sem fallback para Windows PowerShell 5.1`);
@@ -134,8 +153,55 @@ for (const rel of psFiles) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Plugins locais
+//
+// Duas classes de desgaste que quebram em silêncio quando o DSH muda de versão:
+//  - classes CSS-module hasheadas (`.o3BgMG_root`), cujo hash muda a cada build;
+//  - tokens de design renomeados (`--dsw-alias-bg-hover` virou
+//    `--dsw-alias-interactive-bg-hover`).
+// A lista abaixo é o conjunto VERIFICADO de tokens que existem no DSH 0.2.0-rc.2.
+// ---------------------------------------------------------------------------
+const KNOWN_DSW_TOKENS = new Set([
+  "--dsw-alias-bg-base",
+  "--dsw-alias-bg-overlay",
+  "--dsw-alias-border-l1",
+  "--dsw-alias-border-l2",
+  "--dsw-alias-interactive-bg-active",
+  "--dsw-alias-interactive-bg-hover",
+  "--dsw-alias-label-caption",
+  "--dsw-alias-label-primary",
+  "--dsw-alias-label-secondary",
+  "--dsw-alias-label-tertiary",
+  "--dsw-alias-markdown-code-block",
+  "--dsw-alias-state-business-primary",
+]);
+
+const localPlugins = ["plugins/dsh-distill-ui/lib/client.js", "plugins/dsh-credits-hero/lib/client.js"];
+const HASHED_CLASS = /\.[A-Za-z]{5,9}_[A-Za-z][A-Za-z0-9]*/g;
+
+for (const rel of localPlugins) {
+  const content = read(rel);
+
+  const hashed = [...new Set(content.match(HASHED_CLASS) ?? [])].sort();
+  if (hashed.length > 0) {
+    fail(`${rel} usa classe CSS-module hasheada (${hashed.slice(0, 3).join(", ")}); o hash muda a cada build do DSH`);
+  } else {
+    pass(`${rel} não depende de nomes de classe hasheados`);
+  }
+
+  const unknown = [...new Set(content.match(/--dsw-[a-z0-9-]+/g) ?? [])]
+    .filter((token) => !KNOWN_DSW_TOKENS.has(token))
+    .sort();
+  if (unknown.length > 0) {
+    fail(`${rel} usa token(ns) de design fora da lista verificada do DSH 0.2.0-rc.2: ${unknown.join(", ")}`);
+  } else {
+    pass(`${rel} usa apenas tokens --dsw-* verificados no DSH 0.2.0-rc.2`);
+  }
+}
+
 if (failures > 0) {
   console.error(`\nVerificação de compatibilidade do DSH falhou (${failures} problema(s)).`);
   process.exit(1);
 }
-console.log("\nConsistência de versões e perfil do DSH: tudo certo.");
+console.log("\nConsistência de versões, perfil e plugins locais: tudo certo.");

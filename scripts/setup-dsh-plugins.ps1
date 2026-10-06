@@ -251,23 +251,33 @@ try {
     & $pnpmInvocation.File @($pnpmInvocation.Prefix + @("install"))
   } elseif (Get-Command npm -ErrorAction SilentlyContinue) {
     Write-Warning "pnpm nao encontrado; usando npm. O npm ignora pnpm-workspace.yaml (nodeLinker: hoisted, autoInstallPeers: false), entao o layout de node_modules pode divergir do esperado."
+    # Plugins de terceiros declaram ranges de peer conflitantes entre si, e o
+    # npm >= 7 aborta com ERESOLVE. O gate de compatibilidade do DSH revalida
+    # os peers no boot de qualquer forma, entao aceitar o conflito e seguro.
     npm install
+    if ($LASTEXITCODE -ne 0) {
+      Write-Warning "npm install falhou (peers conflitantes); repetindo com --legacy-peer-deps."
+      npm install --legacy-peer-deps
+      if ($LASTEXITCODE -ne 0) { throw "npm install falhou mesmo com --legacy-peer-deps." }
+    }
   } else {
     throw "Nem pnpm nem npm foram encontrados. Instale um dos dois e rode novamente."
   }
 
-  # Patches pos-instalacao do dsh-better-sidebar: fence seguro, sem auto-abertura
-  # da aba Tasks, sem interceptar links de preview e com loopback liberado.
+  # Patches pos-instalacao do dsh-better-sidebar.
+  #
+  # Verificado contra o 0.24.1 publicado: os needles de `fence seguro`,
+  # `browserInterceptLinks`, `browserInterceptHttp` e `browserAllowedLoopback`
+  # NAO existem mais - essas opcoes foram removidas do plugin (a allowlist de
+  # loopback virou configuracao na propria interface, em "Allowed local
+  # addresses"). Mante-los aqui so gerava um aviso de no-op a cada execucao.
+  #
   # Cada needle e um literal especifico de versao. Se o pin do plugin mudar, o
   # needle pode desaparecer - por isso contamos o que casou de fato em vez de
   # anunciar sucesso sobre um no-op silencioso.
   $sidebarPatches = @(
-    @{ Name = 'fence seguro';                  From = 'if (value === null || typeof value !== "object") return true;'; To = 'if (value === null || typeof value !== "object") return false;' },
     @{ Name = 'autoOpenSubagent: false';       From = 'autoOpenSubagent: true,';        To = 'autoOpenSubagent: false,' },
     @{ Name = 'autoOpenJobs: false';           From = 'autoOpenJobs: true,';            To = 'autoOpenJobs: false,' },
-    @{ Name = 'browserInterceptLinks: false';  From = 'browserInterceptLinks: true,';   To = 'browserInterceptLinks: false,' },
-    @{ Name = 'browserInterceptHttp: false';   From = 'browserInterceptHttp: true,';    To = 'browserInterceptHttp: false,' },
-    @{ Name = 'browserAllowedLoopback';        From = 'browserAllowedLoopback: "",';    To = 'browserAllowedLoopback: "localhost,127.0.0.1",' },
     @{ Name = 'aba subagent desabilitada';     From = 'const isTabEnabled = (id) => store.getPrefs().tabsEnabled[id] !== false;'; To = 'const isTabEnabled = (id) => id !== "subagent" && store.getPrefs().tabsEnabled[id] !== false;' }
   )
   $tasksPagePattern = 'function activateTasksPage\(ctx, sessionId, options\) \{[\s\S]*?if \(park\) column\?\.toggleExpanded\?\.\(\);\s*\}'
@@ -294,10 +304,16 @@ try {
       if ($txt.Contains($patch.From)) {
         $txt = $txt.Replace($patch.From, $patch.To)
         $hitCount[$patch.Name]++
+      } elseif ($txt.Contains($patch.To)) {
+        # Ja aplicado numa execucao anterior: o needle original nao existe mais,
+        # entao ausencia de `From` NAO significa que o patch falhou.
+        $hitCount[$patch.Name]++
       }
     }
     if ([regex]::IsMatch($txt, $tasksPagePattern)) {
       $txt = [regex]::Replace($txt, $tasksPagePattern, $tasksPageStub)
+      $hitCount['activateTasksPage stub']++
+    } elseif ($txt.Contains($tasksPageStub)) {
       $hitCount['activateTasksPage stub']++
     }
     if ($txt -ne $original) {
@@ -315,6 +331,39 @@ try {
       Write-Warning ("Estes patches nao casaram em nenhum arquivo (needle de outra versao do plugin): " + ($missed -join '; '))
       Write-Warning "O dsh-better-sidebar vai rodar com o comportamento padrao nesses pontos."
     }
+  }
+
+  # Overlays com YAML invalido publicados por plugins de terceiros.
+  # Em YAML, `@` e indicador reservado: `name: @escopo/pacote` sem aspas nao e um
+  # escalar valido. O DSH falha ao parsear o overlay e PULA O BUNDLE INTEIRO
+  # ("dsh: skipping profile bundle ..."), que e o caso do @dawsondx/dsh-web-open.
+  # Aspamos qualquer `name:` que comece com `@` - generico, pega o proximo tambem.
+  $overlayCandidates = @()
+  $nmRoot = Join-Path $ProfileDir "node_modules"
+  if (Test-Path $nmRoot) {
+    foreach ($entry in Get-ChildItem -Path $nmRoot -Directory -ErrorAction SilentlyContinue) {
+      if ($entry.Name.StartsWith("@")) {
+        foreach ($scoped in Get-ChildItem -Path $entry.FullName -Directory -ErrorAction SilentlyContinue) {
+          $overlayCandidates += (Join-Path $scoped.FullName "cordis.patch.yml")
+        }
+      } else {
+        $overlayCandidates += (Join-Path $entry.FullName "cordis.patch.yml")
+      }
+    }
+  }
+  $overlaysFixed = 0
+  foreach ($overlay in $overlayCandidates) {
+    if (-not (Test-Path $overlay)) { continue }
+    $overlayText = Get-Content $overlay -Raw
+    $overlayFixedText = [regex]::Replace($overlayText, '(?m)^(\s*name:\s*)(@\S+)\s*$', '$1''$2''')
+    if ($overlayFixedText -ne $overlayText) {
+      Write-TextNoBom $overlay $overlayFixedText
+      Write-Host "Overlay corrigido (YAML): $overlay" -ForegroundColor Green
+      $overlaysFixed++
+    }
+  }
+  if ($overlaysFixed -eq 0) {
+    Write-Host "Nenhum overlay com YAML invalido encontrado." -ForegroundColor Green
   }
 
   Write-Host "Todos os plugins foram instalados com sucesso!" -ForegroundColor Green

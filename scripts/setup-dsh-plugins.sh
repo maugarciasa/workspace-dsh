@@ -73,9 +73,8 @@ else
   echo "cordis.patch.yml atualizado com os inserts que faltavam."
 fi
 
-# 3 + 4. Manifesto do perfil e patches do sidebar, via node.
-# Fazer isso em node evita o BOM do PowerShell, o `sed -i` incompatível entre
-# GNU/BSD e mantém as duas plataformas idênticas.
+# 3. Manifesto do perfil.
+# Fazer isso em node evita o BOM do PowerShell e mantém as plataformas idênticas.
 command -v node >/dev/null 2>&1 || { echo "Erro: node é necessário (>=18)." >&2; exit 1; }
 
 node - "${PROFILE_DIR}" "${FORCE}" <<'NODE'
@@ -123,9 +122,6 @@ const desiredBundles = [
   "dsh-plugin-subscriptions",
 ];
 
-// ---------------------------------------------------------------------------
-// package.json do perfil
-// ---------------------------------------------------------------------------
 const pkgPath = path.join(profileDir, "package.json");
 let pkg = {};
 if (fs.existsSync(pkgPath)) {
@@ -177,20 +173,51 @@ if (conflicts.length > 0) {
   console.log("AVISO: pins existentes divergem do desejado (use --force para sobrescrever):");
   for (const item of conflicts) console.log(`  ! ${item}`);
 }
+NODE
+
+# 4. Instalar dependências
+cd "${PROFILE_DIR}"
+if command -v pnpm >/dev/null 2>&1; then
+  echo "Instalando com pnpm..."
+  pnpm install
+elif command -v npm >/dev/null 2>&1; then
+  echo "AVISO: pnpm não encontrado; usando npm. O npm ignora pnpm-workspace.yaml (nodeLinker: hoisted, autoInstallPeers: false), então o layout de node_modules pode divergir do esperado." >&2
+  # Plugins de terceiros declaram ranges de peer conflitantes entre si, e o
+  # npm >= 7 aborta com ERESOLVE. O gate de compatibilidade do DSH revalida
+  # os peers no boot de qualquer forma, entao aceitar o conflito e seguro.
+  npm install || {
+    echo "AVISO: npm install falhou (peers conflitantes); repetindo com --legacy-peer-deps." >&2
+    npm install --legacy-peer-deps
+  }
+else
+  echo "Erro: pnpm ou npm é necessário para instalar os plugins." >&2
+  exit 1
+fi
+
+# 5. Patches pós-instalação — DEPOIS do install, porque os alvos só existem em
+# node_modules a partir daí.
+node - "${PROFILE_DIR}" <<'NODE'
+const fs = require("fs");
+const path = require("path");
+
+const [, , profileDir] = process.argv;
 
 // ---------------------------------------------------------------------------
-// Patches pós-instalação do dsh-better-sidebar
+// dsh-better-sidebar
+//
+// Verificado contra o 0.24.1 publicado: os needles de `fence seguro`,
+// `browserInterceptLinks`, `browserInterceptHttp` e `browserAllowedLoopback`
+// NÃO existem mais — essas opções foram removidas do plugin (a allowlist de
+// loopback virou configuração na própria interface, em "Allowed local
+// addresses"). Mantê-los aqui só gerava um aviso de no-op a cada execução.
+//
 // Cada needle é um literal específico de versão. Se o pin do plugin mudar, o
 // needle pode desaparecer — por isso contamos o que casou de fato em vez de
 // anunciar sucesso sobre um no-op silencioso.
 // ---------------------------------------------------------------------------
 const sidebarPatches = [
-  { name: "fence seguro", from: 'if (value === null || typeof value !== "object") return true;', to: 'if (value === null || typeof value !== "object") return false;' },
   { name: "autoOpenSubagent: false", from: "autoOpenSubagent: true,", to: "autoOpenSubagent: false," },
   { name: "autoOpenJobs: false", from: "autoOpenJobs: true,", to: "autoOpenJobs: false," },
-  { name: "browserInterceptLinks: false", from: "browserInterceptLinks: true,", to: "browserInterceptLinks: false," },
-  { name: "browserInterceptHttp: false", from: "browserInterceptHttp: true,", to: "browserInterceptHttp: false," },
-  { name: "browserAllowedLoopback", from: 'browserAllowedLoopback: "",', to: 'browserAllowedLoopback: "localhost,127.0.0.1",' },
   { name: "aba subagent desabilitada", from: "const isTabEnabled = (id) => store.getPrefs().tabsEnabled[id] !== false;", to: 'const isTabEnabled = (id) => id !== "subagent" && store.getPrefs().tabsEnabled[id] !== false;' },
 ];
 const tasksPagePattern = /function activateTasksPage\(ctx, sessionId, options\) \{[\s\S]*?if \(park\) column\?\.toggleExpanded\?\.\(\);\s*\}/;
@@ -216,10 +243,16 @@ for (const file of sidebarFiles) {
     if (text.includes(patch.from)) {
       text = text.split(patch.from).join(patch.to);
       hits.set(patch.name, hits.get(patch.name) + 1);
+    } else if (text.includes(patch.to)) {
+      // Ja aplicado numa execucao anterior: o needle original nao existe mais,
+      // entao ausencia de `from` NAO significa que o patch falhou.
+      hits.set(patch.name, hits.get(patch.name) + 1);
     }
   }
   if (tasksPagePattern.test(text)) {
     text = text.replace(tasksPagePattern, tasksPageStub);
+    hits.set("activateTasksPage stub", hits.get("activateTasksPage stub") + 1);
+  } else if (text.includes(tasksPageStub)) {
     hits.set("activateTasksPage stub", hits.get("activateTasksPage stub") + 1);
   }
   if (text !== original) {
@@ -239,20 +272,54 @@ if (!sidebarFound) {
     console.log("AVISO: o dsh-better-sidebar vai rodar com o comportamento padrão nesses pontos.");
   }
 }
-NODE
 
-# 5. Instalar dependências
-cd "${PROFILE_DIR}"
-if command -v pnpm >/dev/null 2>&1; then
-  echo "Instalando com pnpm..."
-  pnpm install
-elif command -v npm >/dev/null 2>&1; then
-  echo "AVISO: pnpm não encontrado; usando npm. O npm ignora pnpm-workspace.yaml (nodeLinker: hoisted, autoInstallPeers: false), então o layout de node_modules pode divergir do esperado." >&2
-  npm install
-else
-  echo "Erro: pnpm ou npm é necessário para instalar os plugins." >&2
-  exit 1
-fi
+// ---------------------------------------------------------------------------
+// Overlays com YAML inválido publicado por plugins de terceiros
+//
+// Em YAML, `@` é indicador reservado: `name: @escopo/pacote` sem aspas não é um
+// escalar válido. O DSH falha ao parsear o overlay e PULA O BUNDLE INTEIRO:
+//   dsh: skipping profile bundle "@dawsondx/dsh-web-open": YAMLException ...
+// @dawsondx/dsh-web-open@0.1.2 publica exatamente isso. Aspamos qualquer
+// `name:` que comece com `@` — genérico, pega o próximo caso também.
+// ---------------------------------------------------------------------------
+function fixBrokenOverlays(root) {
+  const candidates = [];
+  const nm = path.join(root, "node_modules");
+  if (!fs.existsSync(nm)) return 0;
+
+  for (const entry of fs.readdirSync(nm, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    if (entry.name.startsWith("@")) {
+      const scopeDir = path.join(nm, entry.name);
+      for (const scoped of fs.readdirSync(scopeDir, { withFileTypes: true })) {
+        if (!scoped.isDirectory()) continue;
+        candidates.push(path.join(scopeDir, scoped.name, "cordis.patch.yml"));
+      }
+    } else {
+      candidates.push(path.join(nm, entry.name, "cordis.patch.yml"));
+    }
+  }
+
+  let fixed = 0;
+  for (const file of candidates) {
+    if (!fs.existsSync(file)) continue;
+    const before = fs.readFileSync(file, "utf8");
+    // Captura `name: @algo` sem aspas, preservando a indentação e o resto da linha.
+    const after = before.replace(/^(\s*name:\s*)(@\S+)\s*$/gm, "$1'$2'");
+    if (after !== before) {
+      fs.writeFileSync(file, after, "utf8");
+      console.log(`Overlay corrigido (YAML): ${path.relative(root, file)}`);
+      fixed += 1;
+    }
+  }
+  return fixed;
+}
+
+const overlaysFixed = fixBrokenOverlays(profileDir);
+if (overlaysFixed === 0) {
+  console.log("Nenhum overlay com YAML inválido encontrado.");
+}
+NODE
 
 echo ""
 echo "==> Todos os plugins foram instalados com sucesso!"
