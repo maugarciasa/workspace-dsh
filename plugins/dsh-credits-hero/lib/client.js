@@ -7,7 +7,7 @@ window.__ModuleLoader__.load({
     var module = { exports: {} };
     var exports = module.exports;
 
-    console.info("[dsh-credits-hero] v0.2.1 carregado (modal fixo ao clicar/arrastar)");
+    console.info("[dsh-credits-hero] v0.6.0 carregado (modal fixo ao clicar/arrastar)");
 
     const React = require("react");
     const h = React.createElement;
@@ -242,7 +242,7 @@ window.__ModuleLoader__.load({
       padding: "10px 14px",
       border: "1px solid rgba(127,127,127,.35)",
       borderRadius: "10px",
-      background: "var(--dsw-alias-surface-overlay, #1c1c1f)",
+      background: "var(--dsw-alias-bg-overlay, #1c1c1f)",
       color: "var(--dsw-alias-label-primary, #e6edf3)",
       boxShadow: "0 14px 36px rgba(0,0,0,.55)",
       fontSize: "12px",
