@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Sincroniza todas as skills de ~/.agents/skills para ~/.claude/skills criando Junctions NTFS.
 .DESCRIPTION
@@ -15,8 +15,11 @@ param(
 
 Write-Host "Iniciando auditoria de Junctions de Skills..." -ForegroundColor Cyan
 
+# Não é um erro fatal: numa máquina nova as skills ainda não foram clonadas.
+# `Write-Error` sob $ErrorActionPreference = "Stop" (herdado do instalador)
+# abortaria o script inteiro por causa disso.
 if (-not (Test-Path $AgentsDir)) {
-  Write-Error "Diretório de origem não encontrado: $AgentsDir"
+  Write-Warning "Diretório de origem não encontrado: $AgentsDir - nada a sincronizar."
   return
 }
 
@@ -24,8 +27,7 @@ if (-not (Test-Path $ClaudeDir)) {
   New-Item -ItemType Directory -Path $ClaudeDir -Force | Out-Null
 }
 
-$agentsSkills = Get-ChildItem -Path $AgentsDir -Directory
-$claudeEntries = Get-ChildItem -Path $ClaudeDir
+$agentsSkills = @(Get-ChildItem -Path $AgentsDir -Directory -ErrorAction SilentlyContinue)
 
 $created = 0
 $existing = 0

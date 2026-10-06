@@ -2,72 +2,257 @@
 #
 # setup-dsh-plugins.sh - Provisiona todos os plugins do DSH (Linux / macOS)
 #
+# Uso: bash scripts/setup-dsh-plugins.sh [--force]
+#   --force  sobrescreve pins existentes no package.json do perfil que divergirem
+#            dos valores gerenciados por este script.
+#
 
 set -euo pipefail
 
-PROFILE_DIR="${HOME}/.dsh/profiles/web"
+# O DSH exporta DSH_PROFILE_DIR apontando para o perfil ativo. Instalações via CLI
+# usam `web`; o app Electron (desktop) usa `desktop`. Sem a variável, cai no `web`
+# histórico para não quebrar quem roda `dsh web`.
+PROFILE_DIR="${DSH_PROFILE_DIR:-${HOME}/.dsh/profiles/web}"
 
-echo "==> Configurando ecossistema completo de plugins do DSH..."
+FORCE=0
+for arg in "$@"; do
+  case "${arg}" in
+    -f|--force) FORCE=1 ;;
+    *) echo "Opção desconhecida: ${arg}" >&2; exit 2 ;;
+  esac
+done
+
+echo "==> Configurando ecossistema completo de plugins do DSH em ${PROFILE_DIR}..."
+
+# Instalar num perfil que o DSH não inicializa é o erro mais caro possível aqui:
+# o script termina "com sucesso" e nenhum plugin aparece na interface.
+if [ -n "${DSH_PROFILE_DIR:-}" ]; then
+  target="$(cd "${PROFILE_DIR}" 2>/dev/null && pwd || printf '%s' "${PROFILE_DIR}")"
+  active="$(cd "${DSH_PROFILE_DIR}" 2>/dev/null && pwd || printf '%s' "${DSH_PROFILE_DIR}")"
+  if [ "${target}" != "${active}" ]; then
+    echo "AVISO: o perfil ativo do DSH é '${active}', mas este script vai escrever em '${target}'." >&2
+    echo "AVISO: os plugins NÃO vão aparecer até você rodar de novo com DSH_PROFILE_DIR apontando para o alvo." >&2
+  fi
+fi
 
 mkdir -p "${PROFILE_DIR}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# 1. Copiar plugins locais de UI
+# 1. Copiar plugins locais de UI. Eles entram como dependência `file:` no
+# package.json do perfil (passo 3), porque o DSH resolve o `name` do patch por
+# resolução Node — que só consulta node_modules, nunca <perfil>/plugins.
 if [ -d "${REPO_ROOT}/plugins" ]; then
   mkdir -p "${PROFILE_DIR}/plugins"
   cp -r "${REPO_ROOT}/plugins/"* "${PROFILE_DIR}/plugins/"
 fi
 
-# 2. Configurar cordis.patch.yml
-if [ ! -f "${PROFILE_DIR}/cordis.patch.yml" ]; then
-  cat <<'EOF' > "${PROFILE_DIR}/cordis.patch.yml"
-- insert:
-    - id: distill-ui
-      name: 'dsh-distill-ui'
-    - id: credits-hero
-      name: 'dsh-credits-hero'
-EOF
+# 2. Configurar cordis.patch.yml (merge, nunca sobrescrever)
+# Este arquivo costuma já existir com ajustes do usuário (modelo padrão, UI, etc.),
+# então um `insert` só é acrescentado quando o id correspondente ainda não está lá.
+PATCH_FILE="${PROFILE_DIR}/cordis.patch.yml"
+if [ ! -f "${PATCH_FILE}" ]; then
+  printf '%s\n' '# Your patch layer for this dsh profile, applied after every bundle layer:' > "${PATCH_FILE}"
 fi
 
+MISSING_INSERTS=""
+for entry in "distill-ui:dsh-distill-ui" "credits-hero:dsh-credits-hero"; do
+  id="${entry%%:*}"
+  name="${entry#*:}"
+  if ! grep -qE "^[[:space:]]*-[[:space:]]*id:[[:space:]]*${id}[[:space:]]*$" "${PATCH_FILE}"; then
+    MISSING_INSERTS="${MISSING_INSERTS}    - id: ${id}
+      name: '${name}'
+"
+  fi
+done
+
+if [ -z "${MISSING_INSERTS}" ]; then
+  echo "cordis.patch.yml já registra dsh-distill-ui e dsh-credits-hero. Nada a fazer."
+else
+  printf -- '- insert:\n%b' "${MISSING_INSERTS}" >> "${PATCH_FILE}"
+  echo "cordis.patch.yml atualizado com os inserts que faltavam."
+fi
+
+# 3 + 4. Manifesto do perfil e patches do sidebar, via node.
+# Fazer isso em node evita o BOM do PowerShell, o `sed -i` incompatível entre
+# GNU/BSD e mantém as duas plataformas idênticas.
+command -v node >/dev/null 2>&1 || { echo "Erro: node é necessário (>=18)." >&2; exit 1; }
+
+node - "${PROFILE_DIR}" "${FORCE}" <<'NODE'
+const fs = require("fs");
+const path = require("path");
+
+const [, , profileDir, forceFlag] = process.argv;
+const force = forceFlag === "1";
+
+// A API de ícones das primitives mudou duas vezes: 0.19.x usa Icon*16/14, 0.21.x
+// usa Icon*Regular, e só a linha 0.24.x declara peer
+// @deepseek-ai/dsh-client-ui-primitives ^0.2.0-rc.1 — o range que satisfaz o DSH
+// 0.2.0-rc.2. Com um pin incompatível o DSH desabilita a linha no boot
+// (evaluatePluginCompatibility) e o visualizador de arquivos quebra com React #130.
+const desiredDependencies = {
+  "@dawsondx/dsh-web-open": "^0.1.2",
+  "@khalilhsu/dsh-ui-query-navigator": "^0.1.1",
+  "@linxin666/dsh-client-ui-skill-explorer": "^0.4.2",
+  "dsh-agy": "^0.4.0",
+  "dsh-better-sidebar": "^0.24.1",
+  "dsh-git-graph": "github:1841220388zzzcccxxx-star/dsh-git-graph",
+  "dsh-locale-pt-br": "github:tonnymoura/dsh-locale-pt-br",
+  "dsh-plugin-subscriptions": "^0.9.6",
+  "dsh-undo-savepoint": "^0.4.9",
+  // Plugins locais entram como dependência `file:`: isso cria a entrada em
+  // node_modules, que é o único caminho de resolução que o Loader do DSH consulta.
+  "dsh-distill-ui": "file:plugins/dsh-distill-ui",
+  "dsh-credits-hero": "file:plugins/dsh-credits-hero",
+};
+
+// Os dois plugins locais NÃO entram em `bundles`: eles já são registrados pelo
+// insert do cordis.patch.yml do perfil (passo 2). Adicioná-los aqui faria o DSH
+// carregar também o cordis.patch.yml interno deles, duplicando os ids.
+const desiredBundles = [
+  "@deepseek-ai/dsh-base",
+  "@deepseek-ai/dsh-web-app",
+  "dsh-agy",
+  "dsh-locale-pt-br",
+  "dsh-better-sidebar",
+  "@linxin666/dsh-client-ui-skill-explorer",
+  "@dawsondx/dsh-web-open",
+  "dsh-undo-savepoint",
+  "dsh-git-graph",
+  "@khalilhsu/dsh-ui-query-navigator",
+  "dsh-plugin-subscriptions",
+];
+
+// ---------------------------------------------------------------------------
+// package.json do perfil
+// ---------------------------------------------------------------------------
+const pkgPath = path.join(profileDir, "package.json");
+let pkg = {};
+if (fs.existsSync(pkgPath)) {
+  const raw = fs.readFileSync(pkgPath, "utf8").replace(/^\uFEFF/, "");
+  if (raw.trim() !== "") pkg = JSON.parse(raw);
+}
+
+if (!pkg.name) pkg.name = `dsh-profile-${path.basename(profileDir)}`;
+pkg.private = true;
+pkg.dependencies = pkg.dependencies ?? {};
+
+const added = [];
+const updated = [];
+const conflicts = [];
+for (const [name, range] of Object.entries(desiredDependencies)) {
+  const current = pkg.dependencies[name];
+  if (current === undefined) {
+    pkg.dependencies[name] = range;
+    added.push(`${name}@${range}`);
+  } else if (current !== range) {
+    if (force) {
+      pkg.dependencies[name] = range;
+      updated.push(`${name}: ${current} -> ${range}`);
+    } else {
+      conflicts.push(`${name}: mantido '${current}' (desejado '${range}')`);
+    }
+  }
+}
+
+pkg.dsh = pkg.dsh ?? {};
+pkg.dsh.profile = pkg.dsh.profile ?? {};
+const bundles = Array.isArray(pkg.dsh.profile.bundles) ? pkg.dsh.profile.bundles : [];
+const addedBundles = [];
+for (const bundle of desiredBundles) {
+  if (!bundles.includes(bundle)) {
+    bundles.push(bundle);
+    addedBundles.push(bundle);
+  }
+}
+pkg.dsh.profile.bundles = bundles;
+pkg.dsh.profile.patchReload = "live";
+
+// Sem BOM: o DSH lê o manifesto com JSON.parse sem remover BOM.
+fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + "\n", "utf8");
+console.log(`package.json do perfil atualizado: ${added.length} dependência(s) nova(s), ${updated.length} atualizada(s), ${addedBundles.length} bundle(s).`);
+for (const item of added) console.log(`  + ${item}`);
+for (const item of updated) console.log(`  ~ ${item}`);
+if (conflicts.length > 0) {
+  console.log("AVISO: pins existentes divergem do desejado (use --force para sobrescrever):");
+  for (const item of conflicts) console.log(`  ! ${item}`);
+}
+
+// ---------------------------------------------------------------------------
+// Patches pós-instalação do dsh-better-sidebar
+// Cada needle é um literal específico de versão. Se o pin do plugin mudar, o
+// needle pode desaparecer — por isso contamos o que casou de fato em vez de
+// anunciar sucesso sobre um no-op silencioso.
+// ---------------------------------------------------------------------------
+const sidebarPatches = [
+  { name: "fence seguro", from: 'if (value === null || typeof value !== "object") return true;', to: 'if (value === null || typeof value !== "object") return false;' },
+  { name: "autoOpenSubagent: false", from: "autoOpenSubagent: true,", to: "autoOpenSubagent: false," },
+  { name: "autoOpenJobs: false", from: "autoOpenJobs: true,", to: "autoOpenJobs: false," },
+  { name: "browserInterceptLinks: false", from: "browserInterceptLinks: true,", to: "browserInterceptLinks: false," },
+  { name: "browserInterceptHttp: false", from: "browserInterceptHttp: true,", to: "browserInterceptHttp: false," },
+  { name: "browserAllowedLoopback", from: 'browserAllowedLoopback: "",', to: 'browserAllowedLoopback: "localhost,127.0.0.1",' },
+  { name: "aba subagent desabilitada", from: "const isTabEnabled = (id) => store.getPrefs().tabsEnabled[id] !== false;", to: 'const isTabEnabled = (id) => id !== "subagent" && store.getPrefs().tabsEnabled[id] !== false;' },
+];
+const tasksPagePattern = /function activateTasksPage\(ctx, sessionId, options\) \{[\s\S]*?if \(park\) column\?\.toggleExpanded\?\.\(\);\s*\}/;
+const tasksPageStub = "function activateTasksPage(ctx, sessionId, options) { return; }";
+
+const sidebarFiles = [
+  path.join(profileDir, "node_modules", "dsh-better-sidebar", "lib", "index.js"),
+  path.join(profileDir, "node_modules", "dsh-better-sidebar", "lib", "client.js"),
+  path.join(profileDir, "node_modules", "dsh-better-sidebar", "lib", "client-registry.js"),
+];
+
+const hits = new Map(sidebarPatches.map((patch) => [patch.name, 0]));
+hits.set("activateTasksPage stub", 0);
+let patchedFiles = 0;
+let sidebarFound = false;
+
+for (const file of sidebarFiles) {
+  if (!fs.existsSync(file)) continue;
+  sidebarFound = true;
+  const original = fs.readFileSync(file, "utf8");
+  let text = original;
+  for (const patch of sidebarPatches) {
+    if (text.includes(patch.from)) {
+      text = text.split(patch.from).join(patch.to);
+      hits.set(patch.name, hits.get(patch.name) + 1);
+    }
+  }
+  if (tasksPagePattern.test(text)) {
+    text = text.replace(tasksPagePattern, tasksPageStub);
+    hits.set("activateTasksPage stub", hits.get("activateTasksPage stub") + 1);
+  }
+  if (text !== original) {
+    fs.writeFileSync(file, text, "utf8");
+    patchedFiles += 1;
+  }
+}
+
+if (!sidebarFound) {
+  console.log("AVISO: dsh-better-sidebar não foi encontrado em node_modules; os patches de comportamento não foram aplicados.");
+} else {
+  console.log(`Patches do dsh-better-sidebar: ${patchedFiles} arquivo(s) alterado(s).`);
+  const missed = [...hits.entries()].filter(([, count]) => count === 0).map(([name]) => name).sort();
+  if (missed.length > 0) {
+    console.log("AVISO: estes patches não casaram em nenhum arquivo (needle de outra versão do plugin):");
+    for (const name of missed) console.log(`  ! ${name}`);
+    console.log("AVISO: o dsh-better-sidebar vai rodar com o comportamento padrão nesses pontos.");
+  }
+}
+NODE
+
+# 5. Instalar dependências
 cd "${PROFILE_DIR}"
-
-PLUGINS=(
-  "@dawsondx/dsh-web-open@^0.1.2"
-  "@khalilhsu/dsh-ui-query-navigator@^0.1.1"
-  "@linxin666/dsh-client-ui-skill-explorer@^0.4.2"
-  "dsh-agy@^0.4.0"
-  # 0.21+ exige primitives ^0.1.7-rc.1 (icones Icon*Regular); quebra no DSH < 0.1.7.
-  "dsh-better-sidebar@~0.19.1"
-  "github:1841220388zzzcccxxx-star/dsh-git-graph"
-  "github:tonnymoura/dsh-locale-pt-br"
-  "dsh-plugin-subscriptions@^0.9.6"
-  "dsh-undo-savepoint@^0.4.9"
-)
-
-if command -v pnpm &>/dev/null; then
-  echo "Instalando plugins via pnpm..."
-  pnpm add "${PLUGINS[@]}"
-elif command -v npm &>/dev/null; then
-  echo "Instalando plugins via npm..."
-  npm install "${PLUGINS[@]}"
+if command -v pnpm >/dev/null 2>&1; then
+  echo "Instalando com pnpm..."
+  pnpm install
+elif command -v npm >/dev/null 2>&1; then
+  echo "AVISO: pnpm não encontrado; usando npm. O npm ignora pnpm-workspace.yaml (nodeLinker: hoisted, autoInstallPeers: false), então o layout de node_modules pode divergir do esperado." >&2
+  npm install
 else
   echo "Erro: pnpm ou npm é necessário para instalar os plugins." >&2
   exit 1
 fi
-
-# Patches para dsh-better-sidebar: fence seguro, sem auto-abertura de Tasks, sem interceptar links de preview e com loopback liberado
-for sf in "${PROFILE_DIR}/node_modules/dsh-better-sidebar/lib/index.js" "${PROFILE_DIR}/node_modules/dsh-better-sidebar/lib/client.js" "${PROFILE_DIR}/node_modules/dsh-better-sidebar/lib/client-registry.js"; do
-  if [ -f "${sf}" ]; then
-    sed -i 's/if (value === null || typeof value !== "object") return true;/if (value === null || typeof value !== "object") return false;/g' "${sf}"
-    sed -i 's/autoOpenSubagent: true,/autoOpenSubagent: false,/g' "${sf}"
-    sed -i 's/autoOpenJobs: true,/autoOpenJobs: false,/g' "${sf}"
-    sed -i 's/browserInterceptLinks: true,/browserInterceptLinks: false,/g' "${sf}"
-    sed -i 's/browserInterceptHttp: true,/browserInterceptHttp: false,/g' "${sf}"
-    sed -i 's/browserAllowedLoopback: "",/browserAllowedLoopback: "localhost,127.0.0.1",/g' "${sf}"
-    sed -i 's/const isTabEnabled = (id) => store.getPrefs().tabsEnabled[id] !== false;/const isTabEnabled = (id) => id !== "subagent" && store.getPrefs().tabsEnabled[id] !== false;/g' "${sf}"
-  fi
-done
 
 echo ""
 echo "==> Todos os plugins foram instalados com sucesso!"

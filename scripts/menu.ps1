@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
   Menu interativo unificado do Workspace DSH (PowerShell / Windows).
 #>
@@ -8,6 +8,22 @@ param()
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $repoRoot = Split-Path -Parent $scriptDir
+
+# `pwsh` (PowerShell 7) não está garantido: muitas máquinas só têm o Windows
+# PowerShell 5.1. Resolvemos o que existir em vez de falhar com CommandNotFound.
+function Resolve-HostShell {
+  $pwshCmd = Get-Command pwsh -ErrorAction SilentlyContinue
+  if ($pwshCmd) { return $pwshCmd.Source }
+  $psCmd = Get-Command powershell -ErrorAction SilentlyContinue
+  if ($psCmd) { return $psCmd.Source }
+  return "powershell"
+}
+
+$hostShell = Resolve-HostShell
+
+function Invoke-ChildScript([string]$Name) {
+  & $hostShell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $scriptDir $Name)
+}
 
 function Show-Header {
   Clear-Host
@@ -31,19 +47,19 @@ do {
   switch ($choice) {
     "1" {
       Show-Header
-      pwsh -File (Join-Path $scriptDir "test-environment.ps1")
+      Invoke-ChildScript "test-environment.ps1"
       Write-Host ""
       Pause
     }
     "2" {
       Show-Header
-      pwsh -File (Join-Path $scriptDir "setup-dsh-plugins.ps1")
+      Invoke-ChildScript "setup-dsh-plugins.ps1"
       Write-Host ""
       Pause
     }
     "3" {
       Show-Header
-      pwsh -File (Join-Path $scriptDir "sync-junctions.ps1")
+      Invoke-ChildScript "sync-junctions.ps1"
       Write-Host ""
       Pause
     }

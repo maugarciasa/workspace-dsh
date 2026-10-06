@@ -6,6 +6,15 @@
 
 set -euo pipefail
 
+# Falhar aqui com uma mensagem clara é melhor do que morrer num
+# "git: command not found" no meio do passo 1.
+for required in git node; do
+  if ! command -v "${required}" >/dev/null 2>&1; then
+    echo "Erro: '${required}' não encontrado no PATH. Instale e rode novamente." >&2
+    exit 1
+  fi
+done
+
 echo "=========================================================="
 echo "    Instalador One-Liner do Workspace DSH (Linux / macOS) "
 echo "=========================================================="

@@ -23,3 +23,6 @@ jobs:
 
       - name: Run skill specification validator
         run: node scripts/validate-skill.mjs
+
+      - name: Check DSH version pins and profile targeting
+        run: node scripts/check-dsh-compat.mjs
